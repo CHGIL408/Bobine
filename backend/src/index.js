@@ -7,6 +7,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
+const movieRoutes = require('./routes/movies');
+const cinemaRoutes = require('./routes/cinemas');
+const showtimeRoutes = require('./routes/showtimes');
+app.use('/api/movies', movieRoutes);
+app.use('/api/cinemas', cinemaRoutes);
+app.use('/api/showtimes', showtimeRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: "Bienvenue sur l'API Bobine 🎬" });
