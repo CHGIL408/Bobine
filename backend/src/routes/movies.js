@@ -5,7 +5,7 @@ const Movie = require('../models/Movie');
 // GET TOUS LES FILMS
 router.get('/', async (req, res) => {
   try {
-    const movies = Movie.find();
+    const movies = await Movie.find();
     res.json(movies);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
 // GET UN FILM
 router.get('/:id', async (req, res) => {
   try {
-    const movie = Movie.findById(req.params.id);
+    const movie = await Movie.findById(req.params.id);
     res.json(movie);
   } catch (err) {
     res.status(500).json({ error: err.message });
