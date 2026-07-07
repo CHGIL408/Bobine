@@ -7,4 +7,3 @@
     </div>
   </nav>
 </template>
-
