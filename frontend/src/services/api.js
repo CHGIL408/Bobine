@@ -1,0 +1,20 @@
+import axios from 'axios'
+
+const api = axios.create({
+  baseURL: 'http://localhost:3000/api',
+})
+
+export const getMovies = async () => {
+  const response = await api.get('/movies')
+  return response.data
+}
+
+export const getMovie = async (id) => {
+  const response = await api.get(`/movies/${id}`)
+  return response.data
+}
+
+export const getShowtimes = async (movieId) => {
+  const response = await api.get(`/showtimes?movie=${movieId}`)
+  return response.data
+}
