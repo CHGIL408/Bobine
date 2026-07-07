@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Movie = require('../models/Movie');
-
+const { getMovieById } = require('../services/tmdb');
 // GET TOUS LES FILMS
 router.get('/', async (req, res) => {
   try {
@@ -25,7 +25,8 @@ router.get('/:id', async (req, res) => {
 // AJOUT FILM
 router.post('/', async (req, res) => {
   try {
-    const movie = new Movie(req.body);
+    const tmdbData = await getMovieById(req.body.tmdbId);
+    const movie = new Movie({ ...req.body, ...tmdbData });
     await movie.save();
     res.status(201).json(movie);
   } catch (err) {
