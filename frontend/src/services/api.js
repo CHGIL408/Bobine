@@ -18,3 +18,8 @@ export const getShowtimes = async (movieId) => {
   const response = await api.get(`/showtimes?movie=${movieId}`)
   return response.data
 }
+
+export const getCinemas = async () => {
+  const response = await api.get('/cinemas')
+  return response.data
+}
