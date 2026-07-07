@@ -1,9 +1,11 @@
 <template>
-    <div class="home">
+  <div class="home">
+    <div class="container">
       <h1>Films</h1>
       <div class="grid">
         <MovieCard v-for="movie in movies" :key="movie._id" :movie="movie" />
       </div>
+    </div>
   </div>
 </template>
 
@@ -12,7 +14,7 @@
   background-color: #141414;
   min-height: 100vh;
   padding: 2rem;
-  max-width: 1200px;
+  /* max-width: 1200px; */
   margin: 0 auto;
 }
 
