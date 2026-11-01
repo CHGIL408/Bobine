@@ -56,6 +56,8 @@
               </svg>
               {{ favorites.has(movie._id) ? 'Dans mes favoris' : 'Ajouter aux favoris' }}
             </button>
+            <button type="button" class="secondary share" @click="share">Partager</button>
+            <span class="share-status" role="status">{{ shareStatus }}</span>
           </div>
         </div>
       </section>
@@ -97,6 +99,16 @@
               <div class="cinema">
                 <span class="name">{{ group.cinema.name }}</span>
                 <span class="muted">{{ group.cinema.address }}, {{ group.cinema.city }}</span>
+                <a
+                  v-if="group.cinema.website"
+                  :href="group.cinema.website"
+                  target="_blank"
+                  rel="noopener"
+                  class="book"
+                  :aria-label="`Réserver au ${group.cinema.name} (site du cinéma, nouvel onglet)`"
+                >
+                  Réserver ↗
+                </a>
               </div>
               <ul class="times num" :aria-label="`Heures au ${group.cinema.name}`">
                 <li v-for="s in group.showtimes" :key="s._id">
@@ -136,6 +148,26 @@ const showtimes = ref([])
 const status = ref('loading')
 const selectedDay = ref('')
 const showTrailer = ref(false)
+const shareStatus = ref('')
+
+// Menu de partage du téléphone si le navigateur en a un, sinon copie du lien
+const share = async () => {
+  const url = window.location.href
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: movie.value.title, text: `${movie.value.title} au cinéma`, url })
+    } catch {
+      // partage annulé par l'utilisateur : rien à signaler
+    }
+    return
+  }
+  try {
+    await navigator.clipboard.writeText(url)
+    shareStatus.value = 'Lien copié'
+  } catch {
+    shareStatus.value = `Copiez ce lien : ${url}`
+  }
+}
 
 const load = async () => {
   status.value = 'loading'
@@ -462,6 +494,29 @@ ul {
 .secondary svg {
   width: 16px;
   height: 16px;
+}
+
+.book {
+  align-self: flex-start;
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.book:hover {
+  text-decoration: underline;
+}
+
+.share-status {
+  align-self: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.share-status:empty {
+  display: none;
 }
 
 .fav[aria-pressed='true'] svg {
