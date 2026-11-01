@@ -442,13 +442,11 @@ ul {
 }
 
 .primary {
-  align-self: flex-start;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: var(--control-height);
   padding: 0 18px;
-  margin-top: 4px;
   border: 0;
   border-radius: 999px;
   background: var(--text);
@@ -462,6 +460,7 @@ ul {
 .buttons {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
   margin-top: 4px;
 }
