@@ -58,7 +58,16 @@ const parseTime = (s) => {
   return { h, min: Number(r[2]) };
 };
 
-const toFormat = (type = '') => (/imax/i.test(type) ? 'IMAX' : /3d/i.test(type) ? '3D' : 'Standard');
+// Type de salle Google -> format enregistré ; le premier qui correspond l'emporte
+// shortcut: un type combiné (ex. "UltraAVX 3D") ne garde que le premier format reconnu
+const FORMATS = [
+  ['IMAX', /imax/i],
+  ['ScreenX', /screen\s*x/i],
+  ['DBOX', /d-?\s*box/i],
+  ['UltraAVX', /ultra\s*avx/i],
+  ['3D', /3d/i],
+];
+const toFormat = (type = '') => FORMATS.find(([, re]) => re.test(type))?.[0] ?? 'Standard';
 
 // showtimes SerpApi (requête "cinéma") -> [{ title, datetime, format }]
 const flatten = (showtimes, now = new Date()) =>

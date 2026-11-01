@@ -68,7 +68,7 @@ La tâche GitHub Actions `.github/workflows/sync-showtimes.yml` la lance chaque 
 
 Quota : une recherche SerpApi par cinéma et par exécution, soit environ 90 par mois pour 3 cinémas, sous les 250 du plan gratuit. Une recherche identique relancée dans l'heure sort du cache et n'est pas comptée.
 
-Limites connues : chaque titre Google est associé au premier résultat TMDB sorti dans les 18 derniers mois (sinon au premier résultat) ; une reprise d'un vieux film peut donc être associée à un film récent du même nom. Google ne donne ni prix ni places restantes.
+Limites connues : chaque titre Google est associé au premier résultat TMDB sorti dans les 18 derniers mois (sinon au premier résultat) ; une reprise d'un vieux film peut donc être associée à un film récent du même nom. Google ne donne ni prix ni places restantes, ni la langue (VO/VF) : seul le type de salle est gardé (Standard, IMAX, 3D, UltraAVX, ScreenX, DBOX).
 
 ## API
 

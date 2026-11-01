@@ -52,3 +52,13 @@ test('flatten transforme la réponse SerpApi en séances', () => {
   assert.strictEqual(rows[2].format, 'IMAX');
   assert.strictEqual(toFormat('Dolby Cinema'), 'Standard');
 });
+
+test('toFormat garde les formats de salle Cineplex', () => {
+  assert.strictEqual(toFormat('UltraAVX'), 'UltraAVX');
+  assert.strictEqual(toFormat('ScreenX'), 'ScreenX');
+  assert.strictEqual(toFormat('DBOX'), 'DBOX');
+  assert.strictEqual(toFormat('D-BOX'), 'DBOX');
+  assert.strictEqual(toFormat('IMAX 3D'), 'IMAX');
+  assert.strictEqual(toFormat('3D'), '3D');
+  assert.strictEqual(toFormat(undefined), 'Standard');
+});
