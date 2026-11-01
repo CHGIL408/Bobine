@@ -19,7 +19,7 @@
               <span class="showtime-date">📅 {{ formatDate(showtime.datetime) }}</span>
               <span class="showtime-time">🕐 {{ formatTime(showtime.datetime) }}</span>
               <span class="showtime-format">{{ showtime.format }}</span>
-              <span class="showtime-price">{{ showtime.price }}$</span>
+              <span v-if="showtime.price" class="showtime-price">{{ showtime.price }}$</span>
             </div>
           </div>
         </div>
