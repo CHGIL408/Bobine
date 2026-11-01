@@ -15,7 +15,7 @@ const showtimeSchema = new mongoose.Schema(
     datetime: { type: Date, required: true },
     format: {
       type: String,
-      enum: ['Standard', 'IMAX', '3D', 'VF', 'VOST'],
+      enum: ['Standard', 'IMAX', '3D', 'UltraAVX', 'ScreenX', 'DBOX', 'VF', 'VOST'],
       default: 'Standard',
     },
     availableSeats: { type: Number },
