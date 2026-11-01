@@ -72,6 +72,12 @@ describe('MovieView', () => {
     expect(cinemaRows(w)).toEqual([['Cinéma Cineplex IMAX aux Galeries de la Capitale', ['21 h 00IMAX']]])
   })
 
+  it("affiche un tiret au lieu de 0,0 quand personne n'a encore voté", async () => {
+    getMovie.mockResolvedValue({ ...MOVIE, rating: 0 })
+    const w = await mountView()
+    expect(w.find('.rating').text()).toBe('—')
+  })
+
   it('affiche la réalisation et la distribution', async () => {
     const w = await mountView()
     const credits = w.findAll('.credits dt, .credits dd').map((e) => e.text())

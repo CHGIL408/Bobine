@@ -16,7 +16,7 @@
           <p v-if="movie.title" class="meta num">
             {{ year }} · {{ duration }} · {{ movie.genre?.join(', ') || '—' }}
           </p>
-          <p v-if="movie.title" class="rating num">{{ rating }}<span class="unit"> /10</span></p>
+          <p v-if="movie.title" class="rating num">{{ rating }}<span v-if="movie.rating" class="unit"> /10</span></p>
           <p class="synopsis">{{ movie.synopsis }}</p>
           <dl v-if="movie.director || movie.cast?.length" class="credits">
             <template v-if="movie.director">
@@ -229,7 +229,7 @@ const duration = computed(() => {
   return d ? `${Math.floor(d / 60)} h ${String(d % 60).padStart(2, '0')}` : '—'
 })
 const rating = computed(() =>
-  movie.value.rating == null
+  !movie.value.rating // TMDB met 0 quand personne n'a encore voté
     ? '—'
     : movie.value.rating.toLocaleString('fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
 )

@@ -77,6 +77,12 @@ describe('HomeView', () => {
     expect(dune).toEqual(['2 h 45', '8,1 /10'])
   })
 
+  it("affiche un tiret au lieu de 0,0 quand personne n'a encore voté", async () => {
+    getMovies.mockResolvedValue([MOVIES[2], { ...MOVIES[1], rating: 0 }])
+    const w = await mountHome()
+    expect(w.find('tbody td.score').text()).toBe('—')
+  })
+
   it('indique la prochaine séance du film en vedette et les prochaines heures de chaque film', async () => {
     const w = await mountHome()
     expect(w.find('.next').text().replace(/\s+/g, ' ')).toBe(

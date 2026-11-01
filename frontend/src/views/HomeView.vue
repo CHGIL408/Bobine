@@ -5,7 +5,7 @@
       <h1>À l'affiche</h1>
       <p v-if="status === 'ready'" class="subline">
         {{ countLabel(movies.length) }} · le mieux noté : {{ bestRated?.title ?? '—' }},
-        <span class="nowrap">{{ rating(bestRated?.rating) }} /10</span>
+        <span class="nowrap">{{ rating(bestRated?.rating) }}<template v-if="bestRated?.rating"> /10</template></span>
       </p>
     </div>
 
@@ -39,7 +39,7 @@
           <h2>{{ lead.title }}</h2>
           <p class="meta">{{ year(lead) }} · {{ duration(lead.duration) }} · {{ lead.genre.join(', ') }}</p>
           <p class="rating num">
-            {{ rating(lead.rating) }}<span class="unit"> /10</span>
+            {{ rating(lead.rating) }}<span v-if="lead.rating" class="unit"> /10</span>
           </p>
           <p class="synopsis">{{ lead.synopsis }}</p>
           <p v-if="nextOf(lead)" class="next num">
@@ -93,7 +93,7 @@
               </td>
               <td class="times num">{{ nextTimes(movie) }}</td>
               <td class="num">{{ duration(movie.duration) }}</td>
-              <td class="num score">{{ rating(movie.rating) }}<span class="unit"> /10</span></td>
+              <td class="num score">{{ rating(movie.rating) }}<span v-if="movie.rating" class="unit"> /10</span></td>
             </tr>
           </tbody>
         </table>
@@ -226,8 +226,9 @@ const nextTimes = (movie) => {
 }
 
 const countLabel = (n) => `${n} film${n > 1 ? 's' : ''}`
+// TMDB met 0 quand personne n'a encore voté : pas une vraie note
 const rating = (r) =>
-  r == null ? '—' : r.toLocaleString('fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  !r ? '—' : r.toLocaleString('fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 const duration = (d) => (d ? `${Math.floor(d / 60)} h ${String(d % 60).padStart(2, '0')}` : '—')
 const year = (m) => m.releaseDate?.slice(0, 4) ?? '—'
 // TMDB serves the same backdrop at higher sizes; w500 blurs at lead width
