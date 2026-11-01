@@ -21,7 +21,7 @@ test('parseDay lit Today, Tomorrow et les dates', () => {
   assert.strictEqual(parseDay({ day: 'Mon' }, NOW), null);
 });
 
-test("zonedToUtc gère l'heure d'été et d'hiver de Montréal", () => {
+test("zonedToUtc gère l'heure d'été et d'hiver de Québec", () => {
   assert.strictEqual(zonedToUtc(2026, 6, 1, 19, 0).toISOString(), '2026-07-01T23:00:00.000Z'); // UTC-4
   assert.strictEqual(zonedToUtc(2026, 11, 1, 19, 0).toISOString(), '2026-12-02T00:00:00.000Z'); // UTC-5
 });
