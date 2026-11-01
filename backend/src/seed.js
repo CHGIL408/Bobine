@@ -34,21 +34,27 @@ const movies = [
 ];
 
 const cinemas = [
+  // coordonnées approximatives (centre commercial), à préciser si on fait de la recherche par distance
   {
-    name: 'Cineplex Odeon Quartier Latin',
-    address: '350 Rue Emery',
-    city: 'Montréal',
-    location: { type: 'Point', coordinates: [-73.5614, 45.5122] },
-    phone: '514-849-2244',
+    name: 'Cinéma Cineplex Odeon Beauport',
+    address: '825 Rue Clemenceau',
+    city: 'Québec',
+    location: { type: 'Point', coordinates: [-71.2056, 46.8601] },
     website: 'https://www.cineplex.com',
   },
   {
-    name: 'Cinéma Guzzo Marché Central',
-    address: "9191 Boul de l'Acadie",
-    city: 'Montréal',
-    location: { type: 'Point', coordinates: [-73.6683, 45.5372] },
-    phone: '514-384-5501',
-    website: 'https://www.cinemaguzzo.com',
+    name: 'Cinéma Cineplex IMAX aux Galeries de la Capitale',
+    address: '5401 Boul. des Galeries',
+    city: 'Québec',
+    location: { type: 'Point', coordinates: [-71.2875, 46.8335] },
+    website: 'https://www.cineplex.com',
+  },
+  {
+    name: 'Cinéma Cineplex Odeon Ste-Foy',
+    address: '1200 Autoroute Duplessis',
+    city: 'Québec',
+    location: { type: 'Point', coordinates: [-71.3523, 46.7864] },
+    website: 'https://www.cineplex.com',
   },
 ];
 
