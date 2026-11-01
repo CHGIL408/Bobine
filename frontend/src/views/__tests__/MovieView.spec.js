@@ -8,7 +8,7 @@ vi.mock('@/services/api', () => ({ getMovie: vi.fn(), getShowtimes: vi.fn() }))
 vi.mock('vue-router', () => ({ useRoute: () => ({ params: { id: 're' } }) }))
 
 const BEAUPORT = { _id: 'b', name: 'Cinéma Cineplex Odeon Beauport', address: '825 Rue Clemenceau', city: 'Québec' }
-const IMAX = { _id: 'i', name: 'Cinéma Cineplex IMAX aux Galeries de la Capitale', address: '5401 Boul. des Galeries', city: 'Québec' }
+const IMAX = { _id: 'i', name: 'Cinéma Cineplex IMAX aux Galeries de la Capitale', address: '5401 Boul. des Galeries', city: 'Québec', website: 'https://www.cineplex.com' }
 const MOVIE = { _id: 're', title: 'Resident Evil', genre: ['Horreur'], rating: 7.3, duration: 95, releaseDate: '2026-09-18', synopsis: 'Bryan…', poster: 'p', director: 'Zach Cregger', cast: ['Austin Abrams', 'Kali Reis'], trailerKey: 'JvUuW2n4lC4' }
 // 1er nov. 2026 = heure normale à Québec (UTC-5)
 const at = (local) => new Date(`${local}-05:00`).toISOString()
@@ -58,6 +58,14 @@ describe('MovieView', () => {
     expect(w.text()).toContain('4 séances à venir dans 2 cinémas')
   })
 
+  it('propose de réserver sur le site du cinéma quand il est connu', async () => {
+    const w = await mountView()
+    const [imax, beauport] = w.findAll('.cinemas > li')
+    expect(imax.find('a.book').attributes('href')).toBe('https://www.cineplex.com')
+    expect(imax.find('a.book').attributes('target')).toBe('_blank')
+    expect(beauport.find('a.book').exists()).toBe(false)
+  })
+
   it('change de jour', async () => {
     const w = await mountView()
     await w.findAll('[role=tab]')[1].trigger('click')
@@ -94,6 +102,30 @@ describe('MovieView', () => {
     expect(fav.attributes('aria-pressed')).toBe('true')
     await fav.trigger('click')
     expect(fav.text()).toBe('Ajouter aux favoris')
+  })
+
+  it('partage avec le menu du téléphone quand il existe', async () => {
+    const shareSpy = vi.fn().mockResolvedValue()
+    vi.stubGlobal('navigator', { ...navigator, share: shareSpy })
+    const w = await mountView()
+    await w.find('button.share').trigger('click')
+    expect(shareSpy).toHaveBeenCalledWith({
+      title: 'Resident Evil',
+      text: 'Resident Evil au cinéma',
+      url: window.location.href,
+    })
+    vi.unstubAllGlobals()
+  })
+
+  it('copie le lien sinon, et le dit', async () => {
+    const writeText = vi.fn().mockResolvedValue()
+    vi.stubGlobal('navigator', { ...navigator, share: undefined, clipboard: { writeText } })
+    const w = await mountView()
+    await w.find('button.share').trigger('click')
+    await flushPromises()
+    expect(writeText).toHaveBeenCalledWith(window.location.href)
+    expect(w.find('[role=status]').text()).toBe('Lien copié')
+    vi.unstubAllGlobals()
   })
 
   it("n'affiche ni bouton ni distribution quand TMDB n'en a pas", async () => {
