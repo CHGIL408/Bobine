@@ -1,27 +1,30 @@
 # Bobine
 
-Application web de cinéma : catalogue de films, cinémas et séances.
+Application web de cinéma : films à l'affiche, cinémas de Québec et leurs séances.
 
 - **Frontend** : Vue 3, Vite, Vue Router, Pinia, Bootstrap, Axios
-- **Backend** : Node.js, Express 5, MongoDB (Mongoose), API TMDB pour les fiches de films
+- **Backend** : Node.js, Express 5, MongoDB (Mongoose), API TMDB pour les fiches de films, SerpApi pour les horaires
 
 ## Fonctionnalités
 
-- Liste des films avec recherche et filtre par genre
-- Page détail d'un film
-- Liste des cinémas
+- Page d'accueil : le film le mieux noté en vedette, la liste des films avec recherche et filtre par genre, les cinémas
+- Page détail d'un film avec ses séances
+- Liste des cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy
+- Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB
 - Ajout d'un film à partir de son identifiant TMDB (titre, synopsis, affiche, note… récupérés automatiquement)
 
 ## Structure
 
 ```
-backend/   API REST Express + MongoDB
-frontend/  Application Vue 3
+backend/            API REST Express + MongoDB
+  src/syncShowtimes.js  Synchronisation des séances (SerpApi + TMDB)
+frontend/           Application Vue 3
+.github/workflows/  Tâche quotidienne de synchronisation des séances
 ```
 
 ## Installation
 
-Prérequis : Node.js `^20.19.0` ou `>=22.12.0`, une base MongoDB, une clé d'API TMDB.
+Prérequis : Node.js `^20.19.0` ou `>=22.12.0`, une base MongoDB, un jeton d'accès TMDB, une clé SerpApi (seulement pour synchroniser les séances).
 
 ### Backend
 
@@ -29,17 +32,18 @@ Prérequis : Node.js `^20.19.0` ou `>=22.12.0`, une base MongoDB, une clé d'API
 cd backend
 npm install
 cp .env.example .env   # puis remplir les variables
-npm run seed           # optionnel : insère des films, cinémas et séances de démo
+npm run seed           # optionnel : données de démo — ⚠ vide d'abord films, cinémas et séances
 npm run dev            # http://localhost:3000
 ```
 
 Variables du `.env` :
 
-| Variable       | Rôle                                         |
-|----------------|----------------------------------------------|
-| `PORT`         | Port de l'API (3000 par défaut)              |
-| `MONGODB_URI`  | Chaîne de connexion MongoDB                  |
-| `TMDB_API_KEY` | Jeton d'accès (Bearer) de l'API TMDB         |
+| Variable          | Rôle                                                                                  |
+|-------------------|---------------------------------------------------------------------------------------|
+| `PORT`            | Port de l'API (3000 par défaut)                                                       |
+| `MONGODB_URI`     | Chaîne de connexion MongoDB, **avec le nom de la base** (`…mongodb.net/bobine?…`)     |
+| `TMDB_API_KEY`    | « API Read Access Token » de TMDB (la longue chaîne `eyJ…`), pas la courte « API Key » |
+| `SERPAPI_API_KEY` | Clé SerpApi, pour `npm run sync-showtimes`                                            |
 
 ### Frontend
 
@@ -50,6 +54,16 @@ npm run dev            # http://localhost:5173
 ```
 
 Le frontend appelle par défaut l'API déployée (`https://bobine-backend.onrender.com/api`). Pour utiliser le backend local, changer `baseURL` dans `frontend/src/services/api.js` en `http://localhost:3000/api`.
+
+## Séances automatiques
+
+`npm run sync-showtimes` (dans `backend/`) fait une recherche Google par cinéma via [SerpApi](https://serpapi.com), lit les horaires des 7 prochains jours, retrouve chaque film sur TMDB (et le crée s'il n'est pas en base), puis remplace les séances à venir du cinéma. Les séances passées sont gardées ; si Google ne renvoie rien pour un cinéma, ses séances ne sont pas touchées. Les séances dont le film n'existe plus sont supprimées.
+
+La tâche GitHub Actions `.github/workflows/sync-showtimes.yml` la lance chaque jour vers 6 h (heure de Québec), et à la demande depuis l'onglet **Actions** (« Run workflow »). Elle a besoin de trois secrets dans **Settings > Secrets and variables > Actions > Repository secrets** : `MONGODB_URI`, `TMDB_API_KEY`, `SERPAPI_API_KEY`.
+
+Quota : une recherche SerpApi par cinéma et par exécution, soit environ 90 par mois pour 3 cinémas, sous les 250 du plan gratuit. Une recherche identique relancée dans l'heure sort du cache et n'est pas comptée.
+
+Limites connues : les titres sont associés au premier résultat de recherche TMDB (un remake du même nom peut être choisi par erreur) ; Google ne donne ni prix ni places restantes.
 
 ## API
 
@@ -63,16 +77,36 @@ Le frontend appelle par défaut l'API déployée (`https://bobine-backend.onrend
 | GET     | `/api/cinemas/:id`    | Détail d'un cinéma                      |
 | POST    | `/api/cinemas`        | Ajoute un cinéma                        |
 | DELETE  | `/api/cinemas/:id`    | Supprime un cinéma                      |
-| GET     | `/api/showtimes`      | Liste des séances                       |
+| GET     | `/api/showtimes`      | Liste des séances, triées par date (`?movie=<id>` pour un seul film) |
 | GET     | `/api/showtimes/:id`  | Détail d'une séance                     |
 | POST    | `/api/showtimes`      | Ajoute une séance                       |
 | DELETE  | `/api/showtimes/:id`  | Supprime une séance                     |
+
+## Tests
+
+```sh
+cd backend && npm test    # node:test — routes, service TMDB, lecture des horaires SerpApi
+cd frontend && npm test   # Vitest + Vue Test Utils — page d'accueil, recherche
+```
+
+Les tests n'utilisent ni la base ni le réseau : les modèles Mongoose, axios et l'API du frontend sont simulés. Ils tournent sur GitHub à chaque push et pull request (`.github/workflows/tests.yml`, onglet **Actions**).
+
+## Scripts backend
+
+| Commande                 | Rôle                                                  |
+|--------------------------|-------------------------------------------------------|
+| `npm run dev`            | Serveur avec rechargement automatique (nodemon)       |
+| `npm start`              | Serveur                                               |
+| `npm test`               | Tests unitaires                                       |
+| `npm run sync-showtimes` | Synchronise les séances depuis Google                 |
+| `npm run seed`           | Remplace **toutes** les données par les données de démo |
 
 ## Scripts frontend
 
 | Commande          | Rôle                                |
 |-------------------|-------------------------------------|
 | `npm run dev`     | Serveur de développement            |
+| `npm test`        | Tests unitaires (Vitest)            |
 | `npm run build`   | Build de production                 |
 | `npm run preview` | Prévisualise le build               |
 | `npm run lint`    | Oxlint + ESLint                     |
