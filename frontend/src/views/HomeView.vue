@@ -122,7 +122,9 @@ import { onMounted, ref, computed } from 'vue'
 import { getMovies, getCinemas, getUpcomingShowtimes } from '../services/api.js'
 import { dayKey, dayLabel, minutesOfDay, time } from '@/utils/time'
 import SearchBar from '@/components/SearchBar.vue'
+import { useFavoritesStore } from '@/stores/favorites'
 
+const favorites = useFavoritesStore()
 const movies = ref([])
 const cinemas = ref([])
 const status = ref('loading')
@@ -148,7 +150,13 @@ const load = async () => {
 }
 onMounted(load)
 
-const genres = computed(() => ['Tous', ...new Set(movies.value.flatMap((m) => m.genre))])
+const FAVORITES = 'Favoris' // onglet visible dès qu'un film à l'affiche est en favori
+const hasFavorites = computed(() => movies.value.some((m) => favorites.has(m._id)))
+const genres = computed(() => [
+  'Tous',
+  ...(hasFavorites.value ? [FAVORITES] : []),
+  ...new Set(movies.value.flatMap((m) => m.genre)),
+])
 
 const idOf = (ref) => ref?._id ?? ref // id seul, ou objet peuplé
 const whenWhereSet = computed(() => Boolean(selectedDay.value || after.value || selectedCinema.value))
@@ -187,7 +195,8 @@ const filteredMovies = computed(() => {
     .filter(
       (m) =>
         m.title.toLowerCase().includes(q) &&
-        (selectedGenre.value === 'Tous' || m.genre.includes(selectedGenre.value)) &&
+        (selectedGenre.value === 'Tous' ||
+          (selectedGenre.value === FAVORITES ? favorites.has(m._id) : m.genre.includes(selectedGenre.value))) &&
         (!whenWhereSet.value || matching(m).length > 0),
     )
     .toSorted((a, b) => b.rating - a.rating)

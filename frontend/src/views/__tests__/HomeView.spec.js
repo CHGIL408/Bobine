@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import HomeView from '../HomeView.vue'
 import { getMovies, getCinemas, getUpcomingShowtimes } from '@/services/api.js'
 
@@ -32,7 +33,10 @@ const SHOWTIMES = [
 
 const mountHome = async () => {
   const wrapper = mount(HomeView, {
-    global: { stubs: { RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } } },
+    global: {
+      plugins: [createPinia()],
+      stubs: { RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } },
+    },
   })
   await flushPromises()
   return wrapper
@@ -46,6 +50,7 @@ const choose = (w, label, value) => w.find(`select[aria-label="${label}"]`).setV
 
 describe('HomeView', () => {
   beforeEach(() => {
+    localStorage.clear()
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(at('2026-11-01T15:00:00')))
     getMovies.mockReset().mockResolvedValue(MOVIES)
@@ -132,6 +137,17 @@ describe('HomeView', () => {
     expect(w.find('.next').text()).toContain('mar. 3 nov. 20 h 00 · Odeon Beauport')
     await clickTab(w, 'Tous')
     expect(count(w)).toBe('1 film') // la recherche « dune » est conservée
+  })
+
+  it("propose l'onglet Favoris quand un film à l'affiche est en favori", async () => {
+    let w = await mountHome()
+    expect(w.findAll('[role=tab]').map((t) => t.text())).not.toContain('Favoris')
+
+    localStorage.setItem('bobine:favoris', JSON.stringify(['opp', 'film-plus-a-l-affiche']))
+    w = await mountHome()
+    await clickTab(w, 'Favoris')
+    expect(leadTitle(w)).toBe('Oppenheimer')
+    expect(count(w)).toBe('1 film')
   })
 
   it("affiche l'image de fond en haute résolution", async () => {

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import MovieView from '../MovieView.vue'
 import { getMovie, getShowtimes } from '@/services/api'
 
@@ -21,7 +22,9 @@ const SHOWTIMES = [
 ]
 
 const mountView = async () => {
-  const w = mount(MovieView, { global: { stubs: { RouterLink: { template: '<a><slot /></a>' } } } })
+  const w = mount(MovieView, {
+    global: { plugins: [createPinia()], stubs: { RouterLink: { template: '<a><slot /></a>' } } },
+  })
   await flushPromises()
   return w
 }
@@ -30,6 +33,7 @@ const cinemaRows = (w) =>
 
 describe('MovieView', () => {
   beforeEach(() => {
+    localStorage.clear()
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(at('2026-11-01T15:00:00')))
     getMovie.mockReset().mockResolvedValue(MOVIE)
@@ -80,11 +84,24 @@ describe('MovieView', () => {
     expect(w.find('iframe').exists()).toBe(false)
   })
 
+  it('ajoute le film aux favoris et le retire', async () => {
+    const w = await mountView()
+    const fav = w.find('button.fav')
+    expect(fav.text()).toBe('Ajouter aux favoris')
+    expect(fav.attributes('aria-pressed')).toBe('false')
+    await fav.trigger('click')
+    expect(fav.text()).toBe('Dans mes favoris')
+    expect(fav.attributes('aria-pressed')).toBe('true')
+    await fav.trigger('click')
+    expect(fav.text()).toBe('Ajouter aux favoris')
+  })
+
   it("n'affiche ni bouton ni distribution quand TMDB n'en a pas", async () => {
     getMovie.mockResolvedValue({ ...MOVIE, director: null, cast: [], trailerKey: null })
     const w = await mountView()
     expect(w.find('button.primary').exists()).toBe(false)
     expect(w.find('.credits').exists()).toBe(false)
+    expect(w.find('button.fav').exists()).toBe(true)
   })
 
   it("chaque heure télécharge la séance pour l'agenda", async () => {
