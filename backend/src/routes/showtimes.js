@@ -4,12 +4,17 @@ const Showtime = require('../models/Showtime');
 
 router.get('/', async (req, res) => {
   try {
-    const filter = req.query.movie ? { movie: req.query.movie } : {};
-    const showtimes = await Showtime.find(filter)
-      .sort('datetime')
-      .populate('movie')
-      .populate('cinema');
-    res.json(showtimes);
+    // ?movie=<id> : un seul film ; ?upcoming=true : séances à venir ;
+    // ?populate=false : ids seulement (liste légère pour filtrer côté navigateur)
+    const filter = {};
+    if (req.query.movie) filter.movie = req.query.movie;
+    if (req.query.upcoming === 'true') filter.datetime = { $gte: new Date() };
+    let query = Showtime.find(filter).sort('datetime');
+    query =
+      req.query.populate === 'false'
+        ? query.select('movie cinema datetime format')
+        : query.populate('movie').populate('cinema');
+    res.json(await query);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

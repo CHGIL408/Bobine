@@ -23,3 +23,9 @@ export const getCinemas = async () => {
   const response = await api.get('/cinemas')
   return response.data
 }
+
+// Séances à venir sans les fiches film et cinéma (ids seulement) : liste légère pour filtrer l'accueil
+export const getUpcomingShowtimes = async () => {
+  const response = await api.get('/showtimes', { params: { upcoming: true, populate: false } })
+  return response.data
+}
