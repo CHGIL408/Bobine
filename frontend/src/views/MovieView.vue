@@ -106,8 +106,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMovie, getShowtimes } from '@/services/api'
 import { showtimeIcs, icsHref } from '@/utils/ics'
+import { dayKey, dayLabel, time } from '@/utils/time'
 
-const TZ = 'America/Toronto' // heure de Québec, quel que soit le fuseau du visiteur
 
 const route = useRoute()
 const movie = ref({})
@@ -139,23 +139,6 @@ const fileName = (s) =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '') + '.ics'
-
-const dayKey = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d) // 2026-11-01
-const time = (iso) =>
-  new Date(iso).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', timeZone: TZ })
-
-const dayLabel = (key, now) => {
-  const today = dayKey(now)
-  const tomorrow = dayKey(new Date(now.getTime() + 864e5))
-  if (key === today) return "Aujourd'hui"
-  if (key === tomorrow) return 'Demain'
-  return new Date(`${key}T12:00:00Z`).toLocaleDateString('fr-CA', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    timeZone: 'UTC',
-  })
-}
 
 // Séances à venir, par jour puis par cinéma, dans l'ordre chronologique
 const days = computed(() => {

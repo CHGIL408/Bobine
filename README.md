@@ -7,7 +7,7 @@ Application web de cinéma : films à l'affiche, cinémas de Québec et leurs s�
 
 ## Fonctionnalités
 
-- Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette, recherche et filtre par genre, les cinémas
+- Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette avec sa prochaine séance, filtres par jour, heure (dès 17 h, 19 h, 21 h) et cinéma, recherche et filtre par genre, prochaines heures de chaque film, les cinémas
 - Page d'un film : fiche avec réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec) ; chaque heure s'ajoute à l'agenda (fichier `.ics`)
 - Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire et site
 - Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB
@@ -85,7 +85,7 @@ curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: ap
 | GET     | `/api/cinemas`        | Liste des cinémas                       |
 | GET     | `/api/cinemas/:id`    | Détail d'un cinéma                      |
 | POST    | `/api/cinemas`        | Ajoute un cinéma                        |
-| GET     | `/api/showtimes`      | Liste des séances, triées par date (`?movie=<id>` pour un seul film) |
+| GET     | `/api/showtimes`      | Liste des séances, triées par date. `?movie=<id>` : un seul film ; `?upcoming=true` : à venir seulement ; `?populate=false` : ids du film et du cinéma au lieu des fiches complètes (liste légère) |
 | GET     | `/api/showtimes/:id`  | Détail d'une séance                     |
 | POST    | `/api/showtimes`      | Ajoute une séance                       |
 | DELETE  | `/api/showtimes/:id`  | Supprime une séance                     |
@@ -94,7 +94,7 @@ curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: ap
 
 ```sh
 cd backend && npm test    # node:test — routes, clé API, service TMDB, lecture des horaires SerpApi
-cd frontend && npm test   # Vitest + Vue Test Utils — accueil, page film (séances, bande-annonce, agenda), cinémas, recherche, fichier .ics
+cd frontend && npm test   # Vitest + Vue Test Utils — accueil (filtres jour, heure, cinéma), page film (séances, bande-annonce, agenda), cinémas, recherche, fichier .ics
 ```
 
 Les tests n'utilisent ni la base ni le réseau : les modèles Mongoose, axios et l'API du frontend sont simulés. Ils tournent sur GitHub à chaque push et pull request (`.github/workflows/tests.yml`, onglet **Actions**).

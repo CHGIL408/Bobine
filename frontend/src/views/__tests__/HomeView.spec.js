@@ -1,16 +1,34 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import HomeView from '../HomeView.vue'
-import { getMovies, getCinemas } from '@/services/api.js'
+import { getMovies, getCinemas, getUpcomingShowtimes } from '@/services/api.js'
 
-vi.mock('@/services/api.js', () => ({ getMovies: vi.fn(), getCinemas: vi.fn() }))
+vi.mock('@/services/api.js', () => ({
+  getMovies: vi.fn(),
+  getCinemas: vi.fn(),
+  getUpcomingShowtimes: vi.fn(),
+}))
 
 const MOVIES = [
   { _id: 'dune', title: 'Dune : Deuxième partie', genre: ['Science-Fiction', 'Aventure'], rating: 8.127, duration: 165, releaseDate: '2024-02-27T00:00:00.000Z', backdrop: 'https://image.tmdb.org/t/p/w500/dune.jpg', poster: 'p1' },
   { _id: 'opp', title: 'Oppenheimer', genre: ['Drame', 'Histoire'], rating: 8.025, duration: 181, releaseDate: '2023-07-19T00:00:00.000Z', poster: 'p2' },
   { _id: 'inc', title: 'Inception', genre: ['Action', 'Science-Fiction'], rating: 8.372, duration: 125, poster: 'p3' },
 ]
-const CINEMAS = [{ _id: 'c1', name: 'Cinéma Cineplex Odeon Ste-Foy', address: '1200 Autoroute Duplessis', city: 'Québec' }]
+const CINEMAS = [
+  { _id: 'c1', name: 'Cinéma Cineplex Odeon Beauport', address: '825 Rue Clemenceau', city: 'Québec' },
+  { _id: 'c2', name: 'Cinéma Cineplex Odeon Ste-Foy', address: '1200 Autoroute Duplessis', city: 'Québec' },
+]
+// Heure de Québec en novembre 2026 : UTC-5. "Maintenant" = dimanche 1er nov., 15 h.
+const at = (local) => new Date(`${local}-05:00`).toISOString()
+const SHOWTIMES = [
+  { _id: 's1', movie: 'opp', cinema: 'c1', datetime: at('2026-11-01T13:00:00') }, // déjà passée
+  { _id: 's2', movie: 'dune', cinema: 'c2', datetime: at('2026-11-01T16:30:00') },
+  { _id: 's3', movie: 'inc', cinema: 'c1', datetime: at('2026-11-01T19:30:00') },
+  { _id: 's4', movie: 'dune', cinema: 'c2', datetime: at('2026-11-01T21:35:00') },
+  { _id: 's5', movie: 'inc', cinema: 'c2', datetime: at('2026-11-02T16:00:00') },
+  { _id: 's6', movie: 'opp', cinema: 'c1', datetime: at('2026-11-02T18:00:00') },
+  { _id: 's7', movie: 'dune', cinema: 'c1', datetime: at('2026-11-03T20:00:00') },
+]
 
 const mountHome = async () => {
   const wrapper = mount(HomeView, {
@@ -20,31 +38,100 @@ const mountHome = async () => {
   return wrapper
 }
 const rowTitles = (w) => w.findAll('tbody .identity a').map((a) => a.text())
+const leadTitle = (w) => w.find('.feature h2').text()
+const count = (w) => w.find('.count').text()
 const clickTab = (w, name) => w.findAll('[role=tab]').find((b) => b.text() === name).trigger('click')
 const search = (w, text) => w.find('input[type=search]').setValue(text)
+const choose = (w, label, value) => w.find(`select[aria-label="${label}"]`).setValue(value)
 
 describe('HomeView', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(at('2026-11-01T15:00:00')))
     getMovies.mockReset().mockResolvedValue(MOVIES)
     getCinemas.mockReset().mockResolvedValue(CINEMAS)
+    getUpcomingShowtimes.mockReset().mockResolvedValue(SHOWTIMES)
   })
+  afterEach(() => vi.useRealTimers())
 
   it('résume le catalogue et met le mieux noté en vedette', async () => {
     const w = await mountHome()
     expect(w.find('.subline').text().replace(/\s+/g, ' ')).toBe(
       '3 films · le mieux noté : Inception, 8,4 /10',
     )
-    expect(w.find('.feature h2').text()).toBe('Inception')
+    expect(leadTitle(w)).toBe('Inception')
     expect(w.find('.feature a').attributes('href')).toBe('/movies/inc')
     expect(rowTitles(w)).toEqual(['Dune : Deuxième partie', 'Oppenheimer'])
     expect(getMovies).toHaveBeenCalledWith({ showing: true })
   })
 
-  it('formate note, durée et année à la française, avec un tiret si absent', async () => {
+  it('formate note et durée à la française, avec un tiret si absent', async () => {
     const w = await mountHome()
     expect(w.find('.feature .meta').text()).toBe('— · 2 h 05 · Action, Science-Fiction')
-    const dune = w.findAll('tbody tr')[0].findAll('td.num').map((td) => td.text())
-    expect(dune).toEqual(['2024', '2 h 45', '8,1 /10'])
+    const dune = w.findAll('tbody tr')[0].findAll('td.num:not(.times)').map((td) => td.text())
+    expect(dune).toEqual(['2 h 45', '8,1 /10'])
+  })
+
+  it('indique la prochaine séance du film en vedette et les prochaines heures de chaque film', async () => {
+    const w = await mountHome()
+    expect(w.find('.next').text().replace(/\s+/g, ' ')).toBe(
+      "Prochaine séance : Aujourd'hui 19 h 30 · Odeon Beauport",
+    )
+    const times = w.findAll('tbody td.times').map((td) => td.text())
+    expect(times).toEqual(["Aujourd'hui 16 h 30, 21 h 35", 'Demain 18 h 00']) // la séance de 13 h est passée
+  })
+
+  it("propose les jours qui ont des séances et l'ensemble des cinémas", async () => {
+    const w = await mountHome()
+    const options = (label) => w.find(`select[aria-label="${label}"]`).findAll('option').map((o) => o.text())
+    expect(options('Jour')).toEqual(['Cette semaine', "Aujourd'hui", 'Demain', 'mar. 3 nov.'])
+    expect(options('Cinéma')).toEqual(['Tous les cinémas', 'Odeon Beauport', 'Odeon Ste-Foy'])
+  })
+
+  it('filtre par jour', async () => {
+    const w = await mountHome()
+    await choose(w, 'Jour', '2026-11-02')
+    expect(leadTitle(w)).toBe('Inception')
+    expect(w.find('.next').text()).toContain('Demain 16 h 00 · Odeon Ste-Foy')
+    expect(rowTitles(w)).toEqual(['Oppenheimer'])
+    expect(count(w)).toBe('2 films')
+  })
+
+  it("filtre par heure (« dès 21 h »)", async () => {
+    const w = await mountHome()
+    await choose(w, 'Heure', String(21 * 60))
+    expect(leadTitle(w)).toBe('Dune : Deuxième partie')
+    expect(count(w)).toBe('1 film')
+  })
+
+  it('filtre par cinéma', async () => {
+    const w = await mountHome()
+    await choose(w, 'Cinéma', 'c1')
+    expect(count(w)).toBe('3 films')
+    expect(w.findAll('tbody td.times').map((td) => td.text())).toEqual(['mar. 3 nov. 20 h 00', 'Demain 18 h 00'])
+  })
+
+  it('affiche un message sans résultat, puis réinitialise jour, heure et cinéma', async () => {
+    const w = await mountHome()
+    expect(w.find('.filters button').exists()).toBe(false)
+    await choose(w, 'Jour', '2026-11-02')
+    await choose(w, 'Heure', String(21 * 60))
+    expect(count(w)).toBe('0 film')
+    expect(w.text()).toContain('Aucun film ne correspond à ces critères.')
+    await w.find('.filters button').trigger('click')
+    expect(count(w)).toBe('3 films')
+    expect(w.find('.filters button').exists()).toBe(false)
+  })
+
+  it('combine genre, recherche et filtres de séance', async () => {
+    const w = await mountHome()
+    await clickTab(w, 'Science-Fiction')
+    await search(w, 'DUNE')
+    expect(leadTitle(w)).toBe('Dune : Deuxième partie')
+    await choose(w, 'Cinéma', 'c1')
+    expect(w.find('.next').text()).toContain('mar. 3 nov. 20 h 00 · Odeon Beauport')
+    await clickTab(w, 'Tous')
+    expect(count(w)).toBe('1 film') // la recherche « dune » est conservée
   })
 
   it("affiche l'image de fond en haute résolution", async () => {
@@ -53,36 +140,10 @@ describe('HomeView', () => {
     expect(w.find('.backdrop').attributes('src')).toBe('https://image.tmdb.org/t/p/w1280/dune.jpg')
   })
 
-  it('filtre par genre et met à jour le compteur', async () => {
-    const w = await mountHome()
-    await clickTab(w, 'Drame')
-    expect(w.find('.feature h2').text()).toBe('Oppenheimer')
-    expect(w.find('.count').text()).toBe('1 film')
-    expect(w.text()).toContain('Aucun autre film dans cette sélection.')
-  })
-
-  it('combine recherche et genre', async () => {
-    const w = await mountHome()
-    await clickTab(w, 'Science-Fiction')
-    await search(w, 'DUNE')
-    expect(w.find('.feature h2').text()).toBe('Dune : Deuxième partie')
-    expect(w.find('.count').text()).toBe('1 film')
-    await clickTab(w, 'Tous')
-    expect(w.find('.feature h2').text()).toBe('Dune : Deuxième partie') // la recherche est conservée
-  })
-
-  it('affiche un message quand rien ne correspond', async () => {
-    const w = await mountHome()
-    await search(w, 'zzz')
-    expect(w.find('.count').text()).toBe('0 film')
-    expect(w.text()).toContain('Aucun film ne correspond à cette recherche.')
-    expect(w.find('table').exists()).toBe(false)
-  })
-
   it('liste les cinémas', async () => {
     const w = await mountHome()
-    expect(w.find('.cinemas li').text()).toContain('Cinéma Cineplex Odeon Ste-Foy')
-    expect(w.find('.cinemas li').text()).toContain('1200 Autoroute Duplessis, Québec')
+    expect(w.find('.cinemas li').text()).toContain('Cinéma Cineplex Odeon Beauport')
+    expect(w.find('.cinemas li').text()).toContain('825 Rue Clemenceau, Québec')
   })
 
   it("affiche une erreur et permet de réessayer si l'API échoue", async () => {
@@ -92,6 +153,6 @@ describe('HomeView', () => {
     await w.find('[role=alert] button').trigger('click')
     await flushPromises()
     expect(w.find('[role=alert]').exists()).toBe(false)
-    expect(w.find('.feature h2').text()).toBe('Inception')
+    expect(leadTitle(w)).toBe('Inception')
   })
 })

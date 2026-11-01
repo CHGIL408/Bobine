@@ -5,8 +5,26 @@
       <h1>À l'affiche</h1>
       <p v-if="status === 'ready'" class="subline">
         {{ countLabel(movies.length) }} · le mieux noté : {{ bestRated?.title ?? '—' }},
-        {{ rating(bestRated?.rating) }} /10
+        <span class="nowrap">{{ rating(bestRated?.rating) }} /10</span>
       </p>
+    </div>
+
+    <div v-if="status === 'ready'" class="filters" role="group" aria-label="Quand et où">
+      <select v-model="selectedDay" aria-label="Jour">
+        <option value="">Cette semaine</option>
+        <option v-for="day in days" :key="day.key" :value="day.key">{{ day.label }}</option>
+      </select>
+      <select v-model.number="after" aria-label="Heure">
+        <option :value="0">Toute heure</option>
+        <option v-for="h in [17, 19, 21]" :key="h" :value="h * 60">Dès {{ h }} h</option>
+      </select>
+      <select v-model="selectedCinema" aria-label="Cinéma">
+        <option value="">Tous les cinémas</option>
+        <option v-for="c in cinemas" :key="c._id" :value="c._id">{{ shortName(c.name) }}</option>
+      </select>
+      <button v-if="whenWhereSet" type="button" class="text-action" @click="resetWhenWhere">
+        Réinitialiser
+      </button>
     </div>
 
     <p v-if="status === 'error'" class="error" role="alert">
@@ -24,10 +42,15 @@
             {{ rating(lead.rating) }}<span class="unit"> /10</span>
           </p>
           <p class="synopsis">{{ lead.synopsis }}</p>
+          <p v-if="nextOf(lead)" class="next num">
+            Prochaine séance :
+            <strong class="nowrap">{{ nextOf(lead).when }}</strong> ·
+            <strong class="nowrap">{{ nextOf(lead).where }}</strong>
+          </p>
           <RouterLink :to="`/movies/${lead._id}`" class="primary">Voir les séances</RouterLink>
         </div>
       </template>
-      <p v-else-if="status === 'ready'" class="empty">Aucun film ne correspond à cette recherche.</p>
+      <p v-else-if="status === 'ready'" class="empty">Aucun film ne correspond à ces critères.</p>
     </section>
 
     <div class="columns">
@@ -48,14 +71,14 @@
 
         <div class="toolbar">
           <SearchBar @search="query = $event" />
-          <span class="count num">{{ countLabel(filteredMovies.length) }}</span>
+          <span v-if="status === 'ready'" class="count num">{{ countLabel(filteredMovies.length) }}</span>
         </div>
 
         <table v-if="rest.length">
           <thead>
             <tr>
               <th colspan="2">Film</th>
-              <th class="num">Sortie</th>
+              <th>Prochaines séances</th>
               <th class="num">Durée</th>
               <th class="num">Note</th>
             </tr>
@@ -66,9 +89,9 @@
               <td class="identity">
                 <RouterLink :to="`/movies/${movie._id}`">{{ movie.title }}</RouterLink>
                 <span class="sub">{{ movie.genre.join(', ') }}</span>
-                <span class="sub phone-only num">{{ year(movie) }} · {{ duration(movie.duration) }}</span>
+                <span class="sub phone-only num">{{ duration(movie.duration) }} · {{ nextTimes(movie) }}</span>
               </td>
-              <td class="num">{{ year(movie) }}</td>
+              <td class="times num">{{ nextTimes(movie) }}</td>
               <td class="num">{{ duration(movie.duration) }}</td>
               <td class="num score">{{ rating(movie.rating) }}<span class="unit"> /10</span></td>
             </tr>
@@ -96,7 +119,8 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
-import { getMovies, getCinemas } from '../services/api.js'
+import { getMovies, getCinemas, getUpcomingShowtimes } from '../services/api.js'
+import { dayKey, dayLabel, minutesOfDay, time } from '@/utils/time'
 import SearchBar from '@/components/SearchBar.vue'
 
 const movies = ref([])
@@ -104,11 +128,19 @@ const cinemas = ref([])
 const status = ref('loading')
 const query = ref('')
 const selectedGenre = ref('Tous')
+const showtimes = ref([])
+const selectedDay = ref('') // '' = toute la semaine, sinon "2026-11-01"
+const after = ref(0) // minutes depuis minuit
+const selectedCinema = ref('')
 
 const load = async () => {
   status.value = 'loading'
   try {
-    ;[movies.value, cinemas.value] = await Promise.all([getMovies({ showing: true }), getCinemas()])
+    ;[movies.value, cinemas.value, showtimes.value] = await Promise.all([
+      getMovies({ showing: true }),
+      getCinemas(),
+      getUpcomingShowtimes(),
+    ])
     status.value = 'ready'
   } catch {
     status.value = 'error'
@@ -118,13 +150,45 @@ onMounted(load)
 
 const genres = computed(() => ['Tous', ...new Set(movies.value.flatMap((m) => m.genre))])
 
+const idOf = (ref) => ref?._id ?? ref // id seul, ou objet peuplé
+const whenWhereSet = computed(() => Boolean(selectedDay.value || after.value || selectedCinema.value))
+const resetWhenWhere = () => {
+  selectedDay.value = ''
+  after.value = 0
+  selectedCinema.value = ''
+}
+
+const days = computed(() =>
+  [...new Set(showtimes.value.map((s) => dayKey(new Date(s.datetime))))]
+    .sort()
+    .map((key) => ({ key, label: dayLabel(key) })),
+)
+
+// Séances à venir qui respectent jour, heure et cinéma, groupées par film (déjà triées par date)
+const matchingByMovie = computed(() => {
+  const now = new Date()
+  const byMovie = new Map()
+  for (const s of showtimes.value) {
+    if (new Date(s.datetime) < now) continue
+    if (selectedDay.value && dayKey(new Date(s.datetime)) !== selectedDay.value) continue
+    if (after.value && minutesOfDay(s.datetime) < after.value) continue
+    if (selectedCinema.value && idOf(s.cinema) !== selectedCinema.value) continue
+    const id = idOf(s.movie)
+    if (!byMovie.has(id)) byMovie.set(id, [])
+    byMovie.get(id).push(s)
+  }
+  return byMovie
+})
+const matching = (movie) => matchingByMovie.value.get(movie._id) ?? []
+
 const filteredMovies = computed(() => {
   const q = query.value.trim().toLowerCase()
   return movies.value
     .filter(
       (m) =>
         m.title.toLowerCase().includes(q) &&
-        (selectedGenre.value === 'Tous' || m.genre.includes(selectedGenre.value)),
+        (selectedGenre.value === 'Tous' || m.genre.includes(selectedGenre.value)) &&
+        (!whenWhereSet.value || matching(m).length > 0),
     )
     .toSorted((a, b) => b.rating - a.rating)
 })
@@ -132,6 +196,25 @@ const filteredMovies = computed(() => {
 const bestRated = computed(() => movies.value.toSorted((a, b) => b.rating - a.rating)[0])
 const lead = computed(() => filteredMovies.value[0])
 const rest = computed(() => filteredMovies.value.slice(1))
+
+const shortName = (name) => name.replace(/^Cinéma Cineplex /, '')
+const cinemaName = (id) => shortName(cinemas.value.find((c) => c._id === id)?.name ?? '')
+
+// { when: "Aujourd'hui 19 h 30", where: "Odeon Beauport" }
+const nextOf = (movie) => {
+  const s = matching(movie)[0]
+  if (!s) return null
+  return { when: `${dayLabel(dayKey(new Date(s.datetime)))} ${time(s.datetime)}`, where: cinemaName(idOf(s.cinema)) }
+}
+
+// "Aujourd'hui 16 h 30, 19 h 30, 21 h 35" : les 3 premières heures du premier jour qui correspond
+const nextTimes = (movie) => {
+  const list = matching(movie)
+  if (!list.length) return '—'
+  const key = dayKey(new Date(list[0].datetime))
+  const sameDay = list.filter((s) => dayKey(new Date(s.datetime)) === key).slice(0, 3)
+  return `${dayLabel(key)} ${sameDay.map((s) => time(s.datetime)).join(', ')}`
+}
 
 const countLabel = (n) => `${n} film${n > 1 ? 's' : ''}`
 const rating = (r) =>
@@ -176,6 +259,51 @@ th {
 
 .title-row {
   margin-bottom: 20px;
+}
+
+/* quand et où : une rangée de menus au-dessus du film en vedette */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: var(--gap);
+}
+
+.filters select {
+  height: var(--control-height);
+  padding: 0 34px 0 14px;
+  background-color: var(--surface);
+  border: 1px solid var(--control);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.filters select:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.next {
+  color: var(--muted);
+}
+
+.next strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+td.times.num {
+  color: var(--muted);
+  padding-left: 16px;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .subline {
@@ -518,6 +646,11 @@ a:focus-visible {
   thead,
   td.num:not(.score) {
     display: none;
+  }
+
+  .filters select {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 0;
   }
 
   .phone-only {

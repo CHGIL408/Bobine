@@ -12,10 +12,11 @@ tmdb.getMovieById = async (id) => ({ title: `Film ${id}`, genre: ['Drame'], rati
 const movieRoutes = require('./movies');
 const showtimeRoutes = require('./showtimes');
 
-// Requête Mongoose simulée : chaînable (.sort/.populate) et awaitable
+// Requête Mongoose simulée : chaînable (.sort/.populate/.select) et awaitable
 const query = (data, calls = []) => ({
   sort(arg) { calls.push(['sort', arg]); return this; },
   populate(arg) { calls.push(['populate', arg]); return this; },
+  select(arg) { calls.push(['select', arg]); return this; },
   then(resolve, reject) { return Promise.resolve(data).then(resolve, reject); },
 });
 
@@ -44,6 +45,17 @@ test('GET /showtimes?movie= filtre par film, trie par date et peuple film et cin
   assert.deepStrictEqual(await res.json(), [{ _id: 's1' }]);
   assert.deepStrictEqual(find.mock.calls[0].arguments[0], { movie: 'abc123' });
   assert.deepStrictEqual(calls, [['sort', 'datetime'], ['populate', 'movie'], ['populate', 'cinema']]);
+});
+
+test('GET /showtimes?upcoming=true&populate=false renvoie les séances à venir, ids seulement', async (t) => {
+  const calls = [];
+  const find = t.mock.method(Showtime, 'find', () => query([], calls));
+  const before = Date.now();
+  await fetch(`${base}/showtimes?upcoming=true&populate=false`);
+  const filter = find.mock.calls[0].arguments[0];
+  assert.ok(filter.datetime.$gte.getTime() >= before);
+  assert.strictEqual(filter.movie, undefined);
+  assert.deepStrictEqual(calls, [['sort', 'datetime'], ['select', 'movie cinema datetime format']]);
 });
 
 test('GET /showtimes sans filtre renvoie toutes les séances', async (t) => {
