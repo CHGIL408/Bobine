@@ -29,6 +29,16 @@ body {
   font-size: var(--fs-body);
 }
 
+/* Bootstrap fixe une couleur foncée sur les titres ; ils suivent le texte de la page */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: inherit;
+}
+
 .num {
   font-variant-numeric: tabular-nums;
 }
