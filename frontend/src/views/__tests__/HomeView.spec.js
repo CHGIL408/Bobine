@@ -25,7 +25,7 @@ const SHOWTIMES = [
   { _id: 's1', movie: 'opp', cinema: 'c1', datetime: at('2026-11-01T13:00:00') }, // déjà passée
   { _id: 's2', movie: 'dune', cinema: 'c2', datetime: at('2026-11-01T16:30:00') },
   { _id: 's3', movie: 'inc', cinema: 'c1', datetime: at('2026-11-01T19:30:00') },
-  { _id: 's4', movie: 'dune', cinema: 'c2', datetime: at('2026-11-01T21:35:00') },
+  { _id: 's4', movie: 'dune', cinema: 'c2', datetime: at('2026-11-01T21:35:00'), format: 'DBOX' },
   { _id: 's5', movie: 'inc', cinema: 'c2', datetime: at('2026-11-02T16:00:00') },
   { _id: 's6', movie: 'opp', cinema: 'c1', datetime: at('2026-11-02T18:00:00') },
   { _id: 's7', movie: 'dune', cinema: 'c1', datetime: at('2026-11-03T20:00:00') },
@@ -89,7 +89,7 @@ describe('HomeView', () => {
       "Prochaine séance : Aujourd'hui 19 h 30 · Odeon Beauport",
     )
     const times = w.findAll('tbody td.times').map((td) => td.text())
-    expect(times).toEqual(["Aujourd'hui 16 h 30, 21 h 35", 'Demain 18 h 00']) // la séance de 13 h est passée
+    expect(times).toEqual(["Aujourd'hui 16 h 30, 21 h 35 DBOX", 'Demain 18 h 00']) // la séance de 13 h est passée
   })
 
   it("propose les jours qui ont des séances et l'ensemble des cinémas", async () => {
@@ -145,12 +145,17 @@ describe('HomeView', () => {
     expect(count(w)).toBe('1 film') // la recherche « dune » est conservée
   })
 
-  it("propose l'onglet Favoris quand un film à l'affiche est en favori", async () => {
-    let w = await mountHome()
-    expect(w.findAll('[role=tab]').map((t) => t.text())).not.toContain('Favoris')
+  it("montre toujours l'onglet Favoris et explique comment en ajouter", async () => {
+    const w = await mountHome()
+    expect(w.findAll('[role=tab]').map((t) => t.text()).slice(0, 2)).toEqual(['Tous', 'Favoris'])
+    await clickTab(w, 'Favoris')
+    expect(count(w)).toBe('0 film')
+    expect(w.text()).toContain("Aucun favori pour l'instant")
+  })
 
+  it('filtre sur les favoris', async () => {
     localStorage.setItem('bobine:favoris', JSON.stringify(['opp', 'film-plus-a-l-affiche']))
-    w = await mountHome()
+    const w = await mountHome()
     await clickTab(w, 'Favoris')
     expect(leadTitle(w)).toBe('Oppenheimer')
     expect(count(w)).toBe('1 film')

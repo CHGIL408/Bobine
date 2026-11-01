@@ -50,6 +50,9 @@
           <RouterLink :to="`/movies/${lead._id}`" class="primary">Voir les séances</RouterLink>
         </div>
       </template>
+      <p v-else-if="status === 'ready' && selectedGenre === FAVORITES && !favorites.ids.length" class="empty">
+        Aucun favori pour l'instant. Ouvrez un film et touchez « Ajouter aux favoris ».
+      </p>
       <p v-else-if="status === 'ready'" class="empty">Aucun film ne correspond à ces critères.</p>
     </section>
 
@@ -150,13 +153,8 @@ const load = async () => {
 }
 onMounted(load)
 
-const FAVORITES = 'Favoris' // onglet visible dès qu'un film à l'affiche est en favori
-const hasFavorites = computed(() => movies.value.some((m) => favorites.has(m._id)))
-const genres = computed(() => [
-  'Tous',
-  ...(hasFavorites.value ? [FAVORITES] : []),
-  ...new Set(movies.value.flatMap((m) => m.genre)),
-])
+const FAVORITES = 'Favoris' // toujours visible, pour qu'on sache que la fonction existe
+const genres = computed(() => ['Tous', FAVORITES, ...new Set(movies.value.flatMap((m) => m.genre))])
 
 const idOf = (ref) => ref?._id ?? ref // id seul, ou objet peuplé
 const whenWhereSet = computed(() => Boolean(selectedDay.value || after.value || selectedCinema.value))
@@ -213,16 +211,20 @@ const cinemaName = (id) => shortName(cinemas.value.find((c) => c._id === id)?.na
 const nextOf = (movie) => {
   const s = matching(movie)[0]
   if (!s) return null
-  return { when: `${dayLabel(dayKey(new Date(s.datetime)))} ${time(s.datetime)}`, where: cinemaName(idOf(s.cinema)) }
+  return { when: `${dayLabel(dayKey(new Date(s.datetime)))} ${timeWithFormat(s)}`, where: cinemaName(idOf(s.cinema)) }
 }
 
-// "Aujourd'hui 16 h 30, 19 h 30, 21 h 35" : les 3 premières heures du premier jour qui correspond
+// "18 h 30" ou "18 h 30 DBOX" (le format n'est indiqué que s'il n'est pas Standard)
+const timeWithFormat = (s) =>
+  s.format && s.format !== 'Standard' ? `${time(s.datetime)} ${s.format}` : time(s.datetime)
+
+// "Aujourd'hui 16 h 30, 19 h 30 IMAX, 21 h 35" : les 3 premières heures du premier jour qui correspond
 const nextTimes = (movie) => {
   const list = matching(movie)
   if (!list.length) return '—'
   const key = dayKey(new Date(list[0].datetime))
   const sameDay = list.filter((s) => dayKey(new Date(s.datetime)) === key).slice(0, 3)
-  return `${dayLabel(key)} ${sameDay.map((s) => time(s.datetime)).join(', ')}`
+  return `${dayLabel(key)} ${sameDay.map(timeWithFormat).join(', ')}`
 }
 
 const countLabel = (n) => `${n} film${n > 1 ? 's' : ''}`
