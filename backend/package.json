@@ -8,7 +8,7 @@
     "dev": "nodemon src/index.js",
     "seed": "node src/seed.js",
     "sync-showtimes": "node src/syncShowtimes.js",
-    "test": "node --test src/"
+    "test": "node --test \"src/**/*.test.js\""
   },
   "keywords": [],
   "author": "",
