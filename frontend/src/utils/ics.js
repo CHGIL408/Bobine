@@ -1,0 +1,36 @@
+// Fichier calendrier (.ics, RFC 5545) pour une séance : Google Agenda, Outlook, Calendrier iPhone.
+
+// 2026-11-01T21:30:00.000Z -> 20261101T213000Z
+const toIcsDate = (date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+
+// Les antislashs, points-virgules, virgules et retours à la ligne doivent être échappés
+const escape = (text = '') =>
+  String(text)
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n')
+
+export const showtimeIcs = ({ showtime, movie, now = new Date() }) => {
+  const start = new Date(showtime.datetime)
+  const minutes = movie.duration || 120 // durée inconnue : 2 h par défaut
+  const end = new Date(start.getTime() + minutes * 60e3)
+  const { cinema } = showtime
+  const format = showtime.format && showtime.format !== 'Standard' ? ` (${showtime.format})` : ''
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Bobine//Seances//FR',
+    'BEGIN:VEVENT',
+    `UID:${showtime._id}@bobine`,
+    `DTSTAMP:${toIcsDate(now)}`,
+    `DTSTART:${toIcsDate(start)}`,
+    `DTEND:${toIcsDate(end)}`,
+    `SUMMARY:${escape(`${movie.title}${format}`)}`,
+    `LOCATION:${escape(`${cinema.name}, ${cinema.address}, ${cinema.city}`)}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
+}
+
+export const icsHref = (ics) => `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`

@@ -8,7 +8,7 @@ Application web de cinéma : films à l'affiche, cinémas de Québec et leurs s�
 ## Fonctionnalités
 
 - Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette, recherche et filtre par genre, les cinémas
-- Page d'un film : fiche, séances à venir par jour puis par cinéma (heure de Québec)
+- Page d'un film : fiche avec réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec) ; chaque heure s'ajoute à l'agenda (fichier `.ics`)
 - Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire et site
 - Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB
 - Ajout d'un film à partir de son identifiant TMDB (titre, synopsis, affiche, note… récupérés automatiquement), protégé par clé API
@@ -94,7 +94,7 @@ curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: ap
 
 ```sh
 cd backend && npm test    # node:test — routes, clé API, service TMDB, lecture des horaires SerpApi
-cd frontend && npm test   # Vitest + Vue Test Utils — accueil, page film (séances par jour), cinémas, recherche
+cd frontend && npm test   # Vitest + Vue Test Utils — accueil, page film (séances, bande-annonce, agenda), cinémas, recherche, fichier .ics
 ```
 
 Les tests n'utilisent ni la base ni le réseau : les modèles Mongoose, axios et l'API du frontend sont simulés. Ils tournent sur GitHub à chaque push et pull request (`.github/workflows/tests.yml`, onglet **Actions**).

@@ -11,8 +11,24 @@ const tmdbApi = axios.create({
   },
 });
 
+// Bande-annonce YouTube : la française d'abord, sinon l'anglaise, sinon n'importe laquelle
+const pickTrailer = (videos = []) => {
+  const trailers = videos.filter((v) => v.site === 'YouTube' && v.type === 'Trailer');
+  return (
+    trailers.find((v) => v.iso_639_1 === 'fr') ??
+    trailers.find((v) => v.iso_639_1 === 'en') ??
+    trailers[0]
+  )?.key ?? null;
+};
+
 const getMovieById = async (tmdbId) => {
-  const response = await tmdbApi.get(`/movie/${tmdbId}?language=fr-FR`);
+  const response = await tmdbApi.get(`/movie/${tmdbId}`, {
+    params: {
+      language: 'fr-FR',
+      append_to_response: 'videos,credits',
+      include_video_language: 'fr,en,null',
+    },
+  });
   const movie = response.data;
 
   return {
@@ -26,6 +42,9 @@ const getMovieById = async (tmdbId) => {
     backdrop: movie.backdrop_path
       ? `${TMDB_IMAGE_URL}${movie.backdrop_path}`
       : null,
+    director: movie.credits?.crew?.find((p) => p.job === 'Director')?.name ?? null,
+    cast: (movie.credits?.cast ?? []).slice(0, 6).map((p) => p.name),
+    trailerKey: pickTrailer(movie.videos?.results),
   };
 };
 

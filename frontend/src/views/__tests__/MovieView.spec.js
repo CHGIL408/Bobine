@@ -8,7 +8,7 @@ vi.mock('vue-router', () => ({ useRoute: () => ({ params: { id: 're' } }) }))
 
 const BEAUPORT = { _id: 'b', name: 'Cinéma Cineplex Odeon Beauport', address: '825 Rue Clemenceau', city: 'Québec' }
 const IMAX = { _id: 'i', name: 'Cinéma Cineplex IMAX aux Galeries de la Capitale', address: '5401 Boul. des Galeries', city: 'Québec' }
-const MOVIE = { _id: 're', title: 'Resident Evil', genre: ['Horreur'], rating: 7.3, duration: 95, releaseDate: '2026-09-18', synopsis: 'Bryan…', poster: 'p' }
+const MOVIE = { _id: 're', title: 'Resident Evil', genre: ['Horreur'], rating: 7.3, duration: 95, releaseDate: '2026-09-18', synopsis: 'Bryan…', poster: 'p', director: 'Zach Cregger', cast: ['Austin Abrams', 'Kali Reis'], trailerKey: 'JvUuW2n4lC4' }
 // 1er nov. 2026 = heure normale à Québec (UTC-5)
 const at = (local) => new Date(`${local}-05:00`).toISOString()
 const SHOWTIMES = [
@@ -58,6 +58,45 @@ describe('MovieView', () => {
     const w = await mountView()
     await w.findAll('[role=tab]')[1].trigger('click')
     expect(cinemaRows(w)).toEqual([['Cinéma Cineplex IMAX aux Galeries de la Capitale', ['21 h 00IMAX']]])
+  })
+
+  it('affiche la réalisation et la distribution', async () => {
+    const w = await mountView()
+    const credits = w.findAll('.credits dt, .credits dd').map((e) => e.text())
+    expect(credits).toEqual(['Réalisation', 'Zach Cregger', 'Avec', 'Austin Abrams, Kali Reis'])
+  })
+
+  it('charge la bande-annonce seulement au clic', async () => {
+    const w = await mountView()
+    expect(w.find('iframe').exists()).toBe(false)
+    const button = w.find('button.primary')
+    expect(button.text()).toBe('Voir la bande-annonce')
+    await button.trigger('click')
+    expect(w.find('iframe').attributes('src')).toBe(
+      'https://www.youtube-nocookie.com/embed/JvUuW2n4lC4?autoplay=1&rel=0',
+    )
+    expect(button.attributes('aria-expanded')).toBe('true')
+    await button.trigger('click')
+    expect(w.find('iframe').exists()).toBe(false)
+  })
+
+  it("n'affiche ni bouton ni distribution quand TMDB n'en a pas", async () => {
+    getMovie.mockResolvedValue({ ...MOVIE, director: null, cast: [], trailerKey: null })
+    const w = await mountView()
+    expect(w.find('button.primary').exists()).toBe(false)
+    expect(w.find('.credits').exists()).toBe(false)
+  })
+
+  it("chaque heure télécharge la séance pour l'agenda", async () => {
+    const w = await mountView()
+    const link = w.find('.times a')
+    expect(link.attributes('download')).toBe('resident-evil-2026-11-01-16-h-30.ics')
+    expect(link.attributes('aria-label')).toBe(
+      'Ajouter la séance de 16 h 30 en IMAX au Cinéma Cineplex IMAX aux Galeries de la Capitale à mon agenda',
+    )
+    const ics = decodeURIComponent(link.attributes('href').replace('data:text/calendar;charset=utf-8,', ''))
+    expect(ics).toContain('SUMMARY:Resident Evil (IMAX)')
+    expect(ics).toContain('DTSTART:20261101T213000Z')
   })
 
   it("indique quand il n'y a aucune séance", async () => {

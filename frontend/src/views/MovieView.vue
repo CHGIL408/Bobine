@@ -18,13 +18,45 @@
           </p>
           <p v-if="movie.title" class="rating num">{{ rating }}<span class="unit"> /10</span></p>
           <p class="synopsis">{{ movie.synopsis }}</p>
+          <dl v-if="movie.director || movie.cast?.length" class="credits">
+            <template v-if="movie.director">
+              <dt>Réalisation</dt>
+              <dd>{{ movie.director }}</dd>
+            </template>
+            <template v-if="movie.cast?.length">
+              <dt>Avec</dt>
+              <dd>{{ movie.cast.join(', ') }}</dd>
+            </template>
+          </dl>
+          <button
+            v-if="movie.trailerKey"
+            type="button"
+            class="primary"
+            :aria-expanded="showTrailer"
+            aria-controls="trailer"
+            @click="showTrailer = !showTrailer"
+          >
+            {{ showTrailer ? 'Masquer la bande-annonce' : 'Voir la bande-annonce' }}
+          </button>
         </div>
+      </section>
+
+      <section v-if="showTrailer" id="trailer" class="trailer" aria-label="Bande-annonce">
+        <!-- youtube-nocookie : aucun cookie de suivi avant la lecture ; chargé seulement au clic -->
+        <iframe
+          :src="`https://www.youtube-nocookie.com/embed/${movie.trailerKey}?autoplay=1&rel=0`"
+          :title="`Bande-annonce de ${movie.title}`"
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowfullscreen
+        ></iframe>
       </section>
 
       <section class="showtimes" aria-labelledby="showtimes-title">
         <div class="section-head">
           <h2 id="showtimes-title">Séances</h2>
-          <p v-if="status === 'ready'" class="muted num">{{ summary }}</p>
+          <p v-if="status === 'ready'" class="muted num">
+            {{ summary }}<template v-if="summary"> · touchez une heure pour l'ajouter à votre agenda</template>
+          </p>
         </div>
 
         <template v-if="days.length">
@@ -49,7 +81,13 @@
               </div>
               <ul class="times num" :aria-label="`Heures au ${group.cinema.name}`">
                 <li v-for="s in group.showtimes" :key="s._id">
-                  {{ time(s.datetime) }}<span v-if="s.format !== 'Standard'" class="format">{{ s.format }}</span>
+                  <a
+                    :href="icsHref(showtimeIcs({ showtime: s, movie }))"
+                    :download="fileName(s)"
+                    :aria-label="`Ajouter la séance de ${time(s.datetime)}${s.format !== 'Standard' ? ` en ${s.format}` : ''} au ${group.cinema.name} à mon agenda`"
+                  >
+                    {{ time(s.datetime) }}<span v-if="s.format !== 'Standard'" class="format">{{ s.format }}</span>
+                  </a>
                 </li>
               </ul>
             </li>
@@ -67,6 +105,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMovie, getShowtimes } from '@/services/api'
+import { showtimeIcs, icsHref } from '@/utils/ics'
 
 const TZ = 'America/Toronto' // heure de Québec, quel que soit le fuseau du visiteur
 
@@ -75,6 +114,7 @@ const movie = ref({})
 const showtimes = ref([])
 const status = ref('loading')
 const selectedDay = ref('')
+const showTrailer = ref(false)
 
 const load = async () => {
   status.value = 'loading'
@@ -90,6 +130,15 @@ const load = async () => {
   }
 }
 onMounted(load)
+
+// "Resident Evil" + 2026-11-01 16 h 30 -> resident-evil-2026-11-01-16-h-30.ics
+const fileName = (s) =>
+  `${movie.value.title}-${dayKey(new Date(s.datetime))}-${time(s.datetime)}`
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') + '.ics'
 
 const dayKey = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d) // 2026-11-01
 const time = (iso) =>
@@ -317,7 +366,7 @@ ul {
   gap: 8px;
 }
 
-.times li {
+.times a {
   display: inline-flex;
   gap: 6px;
   height: var(--control-height);
@@ -325,7 +374,74 @@ ul {
   align-items: center;
   background: var(--surface);
   border-radius: 999px;
+  color: var(--text);
   font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.times a:hover {
+  background: var(--raised);
+}
+
+.times a:active {
+  transform: scale(0.97);
+}
+
+.credits {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 0;
+  max-width: 68ch;
+}
+
+.credits dt {
+  color: var(--faint);
+  font-weight: 400;
+}
+
+.credits dd {
+  margin: 0;
+}
+
+.primary {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-height);
+  padding: 0 18px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--text);
+  color: #000;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.15s;
+}
+
+.primary:hover {
+  background: #e6e6e6;
+}
+
+.primary:active {
+  transform: scale(0.97);
+}
+
+.trailer {
+  margin-top: var(--gap);
+}
+
+.trailer iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--surface);
 }
 
 .format {
@@ -389,7 +505,9 @@ button:focus-visible {
     font-size: 24px;
   }
 
-  .synopsis {
+  .synopsis,
+  .credits,
+  .primary {
     grid-column: 1 / -1;
   }
 
@@ -397,7 +515,7 @@ button:focus-visible {
     display: contents;
   }
 
-  .info > :not(.synopsis) {
+  .info > :not(.synopsis, .credits, .primary) {
     grid-column: 2;
   }
 

@@ -24,6 +24,18 @@ test('getMovieById transforme la réponse TMDB en film Bobine', async () => {
     vote_average: 8.372,
     poster_path: '/poster.jpg',
     backdrop_path: null,
+    credits: {
+      crew: [{ job: 'Producer', name: 'Emma Thomas' }, { job: 'Director', name: 'Christopher Nolan' }],
+      cast: ['DiCaprio', 'Gordon-Levitt', 'Page', 'Hardy', 'Watanabe', 'Murphy', 'Caine'].map((name) => ({ name })),
+    },
+    videos: {
+      results: [
+        { site: 'YouTube', type: 'Teaser', iso_639_1: 'fr', key: 'teaser-fr' },
+        { site: 'Vimeo', type: 'Trailer', iso_639_1: 'fr', key: 'vimeo-fr' },
+        { site: 'YouTube', type: 'Trailer', iso_639_1: 'en', key: 'trailer-en' },
+        { site: 'YouTube', type: 'Trailer', iso_639_1: 'fr', key: 'trailer-fr' },
+      ],
+    },
   };
   const movie = await getMovieById(27205);
   assert.deepStrictEqual(movie, {
@@ -35,8 +47,24 @@ test('getMovieById transforme la réponse TMDB en film Bobine', async () => {
     rating: 8.372,
     poster: 'https://image.tmdb.org/t/p/w500/poster.jpg',
     backdrop: null,
+    director: 'Christopher Nolan',
+    cast: ['DiCaprio', 'Gordon-Levitt', 'Page', 'Hardy', 'Watanabe', 'Murphy'],
+    trailerKey: 'trailer-fr',
   });
-  assert.strictEqual(requests.at(-1).url, '/movie/27205?language=fr-FR');
+  assert.strictEqual(requests.at(-1).url, '/movie/27205');
+  assert.deepStrictEqual(requests.at(-1).config.params, {
+    language: 'fr-FR',
+    append_to_response: 'videos,credits',
+    include_video_language: 'fr,en,null',
+  });
+});
+
+test("getMovieById sans distribution ni vidéo renvoie des champs vides", async () => {
+  responses['/movie/1'] = { title: 'Inconnu', genres: [], poster_path: null, backdrop_path: null };
+  const movie = await getMovieById(1);
+  assert.strictEqual(movie.director, null);
+  assert.deepStrictEqual(movie.cast, []);
+  assert.strictEqual(movie.trailerKey, null);
 });
 
 test('searchMovieId préfère un film sorti récemment', async () => {
