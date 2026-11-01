@@ -120,6 +120,15 @@ test('POST /movies complète le film avec les données TMDB', async (t) => {
   assert.deepStrictEqual(json.genre, ['Drame']);
 });
 
+test('DELETE /movies/:id supprime le film et ses séances', async (t) => {
+  const delMovie = t.mock.method(Movie, 'findByIdAndDelete', async () => null);
+  const delShowtimes = t.mock.method(Showtime, 'deleteMany', async () => ({ deletedCount: 3 }));
+  const res = await fetch(`${base}/movies/abc123`, { method: 'DELETE' });
+  assert.strictEqual(res.status, 204);
+  assert.strictEqual(delMovie.mock.calls[0].arguments[0], 'abc123');
+  assert.deepStrictEqual(delShowtimes.mock.calls[0].arguments[0], { movie: 'abc123' });
+});
+
 test('POST /movies répond 400 si la sauvegarde échoue (ex. doublon)', async (t) => {
   t.mock.method(Movie.prototype, 'save', async () => { throw new Error('E11000 duplicate key'); });
   const res = await post('/movies', { tmdbId: 27205 });
