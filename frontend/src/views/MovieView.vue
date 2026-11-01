@@ -1,204 +1,414 @@
 <template>
-  <div class="movie-page">
-    <button class="back-btn" @click="$router.back()">← Retour</button>
-    <div class="movie-hero">
-      <img :src="movie.poster" :alt="movie.title" class="poster" />
-      <div class="movie-details">
-        <h1>{{ movie.title }}</h1>
-        <div class="badges">
-          <span class="badge" v-for="genre in movie.genre" :key="genre">{{ genre }}</span>
+  <main class="page">
+    <RouterLink to="/" class="back">← Films</RouterLink>
+
+    <p v-if="status === 'error'" class="panel message" role="alert">
+      Impossible de charger ce film.
+      <button type="button" class="text-action" @click="load">Réessayer</button>
+    </p>
+
+    <template v-else>
+      <section class="film" aria-labelledby="film-title">
+        <img v-if="movie.poster" class="poster" :src="movie.poster" alt="" />
+        <div v-else class="poster" aria-hidden="true"></div>
+        <div class="info">
+          <h1 id="film-title">{{ movie.title ?? 'Chargement…' }}</h1>
+          <p v-if="movie.title" class="meta num">
+            {{ year }} · {{ duration }} · {{ movie.genre?.join(', ') || '—' }}
+          </p>
+          <p v-if="movie.title" class="rating num">{{ rating }}<span class="unit"> /10</span></p>
+          <p class="synopsis">{{ movie.synopsis }}</p>
         </div>
-        <p class="rating">⭐ {{ movie.rating?.toFixed(1) }} / 10</p>
-        <p class="duration">🕐 {{ movie.duration }} min</p>
-        <p class="synopsis">{{ movie.synopsis }}</p>
-        <div class="showtimes-section">
-          <h2>Séances disponibles</h2>
-          <div v-for="showtime in showtimes" :key="showtime._id" class="showtime-card">
-            <div class="showtime-cinema">🏢 {{ showtime.cinema.name }}</div>
-            <div class="showtime-info">
-              <span class="showtime-date">📅 {{ formatDate(showtime.datetime) }}</span>
-              <span class="showtime-time">🕐 {{ formatTime(showtime.datetime) }}</span>
-              <span class="showtime-format">{{ showtime.format }}</span>
-              <span v-if="showtime.price" class="showtime-price">{{ showtime.price }}$</span>
-            </div>
+      </section>
+
+      <section class="showtimes" aria-labelledby="showtimes-title">
+        <div class="section-head">
+          <h2 id="showtimes-title">Séances</h2>
+          <p v-if="status === 'ready'" class="muted num">{{ summary }}</p>
+        </div>
+
+        <template v-if="days.length">
+          <div class="tabs" role="tablist" aria-label="Jours">
+            <button
+              v-for="day in days"
+              :key="day.key"
+              type="button"
+              role="tab"
+              :aria-selected="day.key === selectedDay"
+              @click="selectedDay = day.key"
+            >
+              {{ day.label }}
+            </button>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
+
+          <ul class="cinemas">
+            <li v-for="group in currentDay.cinemas" :key="group.cinema._id">
+              <div class="cinema">
+                <span class="name">{{ group.cinema.name }}</span>
+                <span class="muted">{{ group.cinema.address }}, {{ group.cinema.city }}</span>
+              </div>
+              <ul class="times num" :aria-label="`Heures au ${group.cinema.name}`">
+                <li v-for="s in group.showtimes" :key="s._id">
+                  {{ time(s.datetime) }}<span v-if="s.format !== 'Standard'" class="format">{{ s.format }}</span>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </template>
+        <p v-else-if="status === 'ready'" class="panel message">
+          Aucune séance prévue pour ce film dans nos cinémas.
+        </p>
+      </section>
+    </template>
+  </main>
 </template>
 
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { getMovie, getShowtimes } from '@/services/api'
+
+const TZ = 'America/Toronto' // heure de Québec, quel que soit le fuseau du visiteur
+
+const route = useRoute()
+const movie = ref({})
+const showtimes = ref([])
+const status = ref('loading')
+const selectedDay = ref('')
+
+const load = async () => {
+  status.value = 'loading'
+  try {
+    ;[movie.value, showtimes.value] = await Promise.all([
+      getMovie(route.params.id),
+      getShowtimes(route.params.id),
+    ])
+    status.value = 'ready'
+    selectedDay.value = days.value[0]?.key ?? ''
+  } catch {
+    status.value = 'error'
+  }
+}
+onMounted(load)
+
+const dayKey = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d) // 2026-11-01
+const time = (iso) =>
+  new Date(iso).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', timeZone: TZ })
+
+const dayLabel = (key, now) => {
+  const today = dayKey(now)
+  const tomorrow = dayKey(new Date(now.getTime() + 864e5))
+  if (key === today) return "Aujourd'hui"
+  if (key === tomorrow) return 'Demain'
+  return new Date(`${key}T12:00:00Z`).toLocaleDateString('fr-CA', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  })
+}
+
+// Séances à venir, par jour puis par cinéma, dans l'ordre chronologique
+const days = computed(() => {
+  const now = new Date()
+  const upcoming = showtimes.value
+    .filter((s) => s.cinema && new Date(s.datetime) >= now)
+    .toSorted((a, b) => new Date(a.datetime) - new Date(b.datetime))
+  const byDay = new Map()
+  for (const s of upcoming) {
+    const key = dayKey(new Date(s.datetime))
+    if (!byDay.has(key)) byDay.set(key, new Map())
+    const cinemas = byDay.get(key)
+    if (!cinemas.has(s.cinema._id)) cinemas.set(s.cinema._id, { cinema: s.cinema, showtimes: [] })
+    cinemas.get(s.cinema._id).showtimes.push(s)
+  }
+  return [...byDay].map(([key, cinemas]) => ({
+    key,
+    label: dayLabel(key, now),
+    cinemas: [...cinemas.values()].toSorted((a, b) => a.cinema.name.localeCompare(b.cinema.name)),
+  }))
+})
+
+const currentDay = computed(() => days.value.find((d) => d.key === selectedDay.value) ?? days.value[0])
+
+const summary = computed(() => {
+  const n = days.value.reduce((t, d) => t + d.cinemas.reduce((u, c) => u + c.showtimes.length, 0), 0)
+  const cinemas = new Set(days.value.flatMap((d) => d.cinemas.map((c) => c.cinema._id))).size
+  if (!n) return ''
+  return `${n} séance${n > 1 ? 's' : ''} à venir dans ${cinemas} cinéma${cinemas > 1 ? 's' : ''}`
+})
+
+const year = computed(() => movie.value.releaseDate?.slice(0, 4) ?? '—')
+const duration = computed(() => {
+  const d = movie.value.duration
+  return d ? `${Math.floor(d / 60)} h ${String(d % 60).padStart(2, '0')}` : '—'
+})
+const rating = computed(() =>
+  movie.value.rating == null
+    ? '—'
+    : movie.value.rating.toLocaleString('fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+)
+</script>
+
 <style scoped>
-.movie-page {
-  background-color: #141414;
-  min-height: 100vh;
-  padding: 2rem;
+.page {
+  max-width: 1200px;
   margin: 0 auto;
-  color: #ffffff;
+  padding: 24px 24px 64px;
 }
 
-.back-btn {
-  background: none;
-  border: 1px solid #444;
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-bottom: 2rem;
-  font-size: 14px;
-  transition: background 0.2s;
+h1 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0;
 }
 
-.back-btn:hover {
-  background: #2a2a2a;
+h2 {
+  font-size: var(--fs-section);
+  font-weight: 600;
+  margin: 0;
 }
 
-.movie-hero {
-  display: flex;
-  gap: 3rem;
-  align-items: flex-start;
+p {
+  margin: 0;
+}
+
+.muted,
+.meta {
+  color: var(--muted);
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--muted);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--text);
+}
+
+.film {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 28px;
+  padding: var(--pad);
+  background: var(--surface);
+  border-radius: var(--radius-card);
 }
 
 .poster {
-  width: 250px;
-  border-radius: 10px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
-  flex-shrink: 0;
+  width: 220px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--raised);
+  display: block;
 }
 
-.movie-details {
-  flex: 1;
-}
-
-.movie-details h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-}
-
-.badges {
+.info {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 1rem;
-}
-
-.badge {
-  background: #2a2a2a;
-  border: 1px solid #444;
-  color: #ccc;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 13px;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
 }
 
 .rating {
-  font-size: 1.2rem;
-  color: #f5c518;
+  font-size: 30px;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  color: var(--accent);
+  line-height: 1.1;
 }
 
-.duration {
-  font-size: 14px;
-  color: #aaa;
-  margin-bottom: 1.5rem;
+.unit {
+  font-size: var(--fs-body);
+  font-weight: 400;
+  color: var(--faint);
 }
 
 .synopsis {
+  max-width: 68ch;
+  color: var(--muted);
+  line-height: 1.6;
   font-size: 15px;
-  line-height: 1.8;
-  color: #ccc;
-  max-width: 700px;
 }
 
-.showtimes-section {
-  margin-top: 2rem;
+.showtimes {
+  margin-top: 40px;
 }
 
-.showtimes-section h2 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: #ffffff;
-  border-bottom: 1px solid #2a2a2a;
-  padding-bottom: 0.5rem;
-}
-
-.showtime-card {
-  background: #1e1e1e;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 10px;
-  transition: background 0.2s;
-}
-
-.showtime-card:hover {
-  background: #2a2a2a;
-}
-
-.showtime-cinema {
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 6px;
-}
-
-.showtime-info {
+.section-head {
   display: flex;
-  gap: 1rem;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.tabs {
+  display: flex;
+  gap: 22px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs button {
+  flex: none;
+  padding: 0 0 10px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: #bbbbbb;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tabs button:hover,
+.tabs button[aria-selected='true'] {
+  color: var(--text);
+}
+
+.tabs button[aria-selected='true'] {
+  border-bottom-color: var(--text);
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cinemas > li {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 2fr;
+  gap: 24px;
+  align-items: start;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+}
+
+.cinemas > li:first-child {
+  border-top: 0;
+}
+
+.cinema {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name {
+  font-weight: 500;
+}
+
+.cinema .muted {
+  font-size: 13px;
+}
+
+.times {
+  display: flex;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
-.showtime-date {
-  font-size: 13px;
-  color: #aaa;
+.times li {
+  display: inline-flex;
+  gap: 6px;
+  height: var(--control-height);
+  padding: 0 14px;
+  align-items: center;
+  background: var(--surface);
+  border-radius: 999px;
+  font-weight: 500;
 }
 
-.showtime-time {
-  font-size: 13px;
-  color: #aaa;
-}
-
-.showtime-format {
-  background: #2a2a2a;
-  border: 1px solid #444;
-  color: #ccc;
-  padding: 2px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-}
-
-.showtime-price {
-  font-size: 13px;
-  color: #f5c518;
+.format {
+  color: var(--accent);
+  font-size: var(--fs-small);
   font-weight: 600;
-  margin-left: auto;
+}
+
+.panel {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+}
+
+.message {
+  padding: 24px var(--pad);
+  color: var(--muted);
+}
+
+.text-action {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-left: 6px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.text-action:hover {
+  text-decoration: underline;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 16px 16px 48px;
+  }
+
+  .film {
+    grid-template-columns: 96px 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .poster {
+    width: 96px;
+    grid-row: span 3;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .rating {
+    font-size: 24px;
+  }
+
+  .synopsis {
+    grid-column: 1 / -1;
+  }
+
+  .info {
+    display: contents;
+  }
+
+  .info > :not(.synopsis) {
+    grid-column: 2;
+  }
+
+  .section-head {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .cinemas > li {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 </style>
-
-<script setup>
-import { getMovie, getShowtimes } from '@/services/api'
-import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-const id = route.params.id
-const movie = ref({})
-const showtimes = ref([])
-
-onMounted(async () => {
-  movie.value = await getMovie(id)
-  showtimes.value = await getShowtimes(id)
-})
-
-const formatDate = (datetime) => {
-  return new Date(datetime).toLocaleDateString('fr-CA')
-}
-
-const formatTime = (datetime) => {
-  return new Date(datetime).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' })
-}
-</script>

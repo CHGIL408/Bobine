@@ -86,7 +86,7 @@ Limites connues : les titres sont associés au premier résultat de recherche TM
 
 ```sh
 cd backend && npm test    # node:test — routes, service TMDB, lecture des horaires SerpApi
-cd frontend && npm test   # Vitest + Vue Test Utils — page d'accueil, recherche
+cd frontend && npm test   # Vitest + Vue Test Utils — accueil, page film (séances par jour), cinémas, recherche
 ```
 
 Les tests n'utilisent ni la base ni le réseau : les modèles Mongoose, axios et l'API du frontend sont simulés. Ils tournent sur GitHub à chaque push et pull request (`.github/workflows/tests.yml`, onglet **Actions**).
