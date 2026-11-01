@@ -4,12 +4,14 @@ const Showtime = require('../models/Showtime');
 
 router.get('/', async (req, res) => {
   try {
-    const showtimes = await Showtime.find()
+    const filter = req.query.movie ? { movie: req.query.movie } : {};
+    const showtimes = await Showtime.find(filter)
+      .sort('datetime')
       .populate('movie')
       .populate('cinema');
     res.json(showtimes);
   } catch (err) {
-    res.json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -26,6 +28,7 @@ router.post('/', async (req, res) => {
   try {
     const showtime = new Showtime(req.body);
     await showtime.save();
+    res.status(201).json(showtime);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

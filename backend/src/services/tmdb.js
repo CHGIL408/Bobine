@@ -29,4 +29,12 @@ const getMovieById = async (tmdbId) => {
   };
 };
 
-module.exports = { getMovieById };
+// shortcut: takes TMDB's first hit, a remake with the same title can be picked; pass a year if that happens
+const searchMovieId = async (title) => {
+  const response = await tmdbApi.get('/search/movie', {
+    params: { query: title, language: 'fr-FR', region: 'CA' },
+  });
+  return response.data.results[0]?.id ?? null;
+};
+
+module.exports = { getMovieById, searchMovieId };
