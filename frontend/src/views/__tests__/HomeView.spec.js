@@ -37,6 +37,7 @@ describe('HomeView', () => {
     expect(w.find('.feature h2').text()).toBe('Inception')
     expect(w.find('.feature a').attributes('href')).toBe('/movies/inc')
     expect(rowTitles(w)).toEqual(['Dune : Deuxième partie', 'Oppenheimer'])
+    expect(getMovies).toHaveBeenCalledWith({ showing: true })
   })
 
   it('formate note, durée et année à la française, avec un tiret si absent', async () => {

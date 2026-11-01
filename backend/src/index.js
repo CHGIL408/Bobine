@@ -10,6 +10,8 @@ app.use(express.json());
 const movieRoutes = require('./routes/movies');
 const cinemaRoutes = require('./routes/cinemas');
 const showtimeRoutes = require('./routes/showtimes');
+const requireApiKey = require('./middleware/requireApiKey');
+app.use('/api', requireApiKey);
 app.use('/api/movies', movieRoutes);
 app.use('/api/cinemas', cinemaRoutes);
 app.use('/api/showtimes', showtimeRoutes);

@@ -108,7 +108,7 @@ const selectedGenre = ref('Tous')
 const load = async () => {
   status.value = 'loading'
   try {
-    ;[movies.value, cinemas.value] = await Promise.all([getMovies(), getCinemas()])
+    ;[movies.value, cinemas.value] = await Promise.all([getMovies({ showing: true }), getCinemas()])
     status.value = 'ready'
   } catch {
     status.value = 'error'

@@ -7,11 +7,11 @@ Application web de cinéma : films à l'affiche, cinémas de Québec et leurs s�
 
 ## Fonctionnalités
 
-- Page d'accueil : le film le mieux noté en vedette, la liste des films avec recherche et filtre par genre, les cinémas
-- Page détail d'un film avec ses séances
-- Liste des cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy
+- Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette, recherche et filtre par genre, les cinémas
+- Page d'un film : fiche, séances à venir par jour puis par cinéma (heure de Québec)
+- Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire et site
 - Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB
-- Ajout d'un film à partir de son identifiant TMDB (titre, synopsis, affiche, note… récupérés automatiquement)
+- Ajout d'un film à partir de son identifiant TMDB (titre, synopsis, affiche, note… récupérés automatiquement), protégé par clé API
 
 ## Structure
 
@@ -44,6 +44,9 @@ Variables du `.env` :
 | `MONGODB_URI`     | Chaîne de connexion MongoDB, **avec le nom de la base** (`…mongodb.net/bobine?…`)     |
 | `TMDB_API_KEY`    | « API Read Access Token » de TMDB (la longue chaîne `eyJ…`), pas la courte « API Key » |
 | `SERPAPI_API_KEY` | Clé SerpApi, pour `npm run sync-showtimes`                                            |
+| `ADMIN_API_KEY`   | Clé exigée pour toute écriture (`POST`, `DELETE`) ; sans elle, les écritures sont refusées |
+
+Pour générer une clé : `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. À mettre aussi dans les variables d'environnement de Render.
 
 ### Frontend
 
@@ -63,20 +66,25 @@ La tâche GitHub Actions `.github/workflows/sync-showtimes.yml` la lance chaque 
 
 Quota : une recherche SerpApi par cinéma et par exécution, soit environ 90 par mois pour 3 cinémas, sous les 250 du plan gratuit. Une recherche identique relancée dans l'heure sort du cache et n'est pas comptée.
 
-Limites connues : les titres sont associés au premier résultat de recherche TMDB (un remake du même nom peut être choisi par erreur) ; Google ne donne ni prix ni places restantes.
+Limites connues : chaque titre Google est associé au premier résultat TMDB sorti dans les 18 derniers mois (sinon au premier résultat) ; une reprise d'un vieux film peut donc être associée à un film récent du même nom. Google ne donne ni prix ni places restantes.
 
 ## API
 
+Les lectures (`GET`) sont publiques. Toute écriture exige le header `x-api-key` égal à `ADMIN_API_KEY` (sinon 401, ou 503 si la clé n'est pas configurée sur le serveur) :
+
+```sh
+curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" -d '{"tmdbId": 693134}'
+```
+
 | Méthode | Route                 | Description                             |
 |---------|-----------------------|-----------------------------------------|
-| GET     | `/api/movies`         | Liste des films                         |
+| GET     | `/api/movies`         | Liste des films (`?showing=true` : seulement ceux qui ont une séance à venir) |
 | GET     | `/api/movies/:id`     | Détail d'un film                        |
 | POST    | `/api/movies`         | Ajoute un film (`{ "tmdbId": 693134 }`) |
 | DELETE  | `/api/movies/:id`     | Supprime un film                        |
 | GET     | `/api/cinemas`        | Liste des cinémas                       |
 | GET     | `/api/cinemas/:id`    | Détail d'un cinéma                      |
 | POST    | `/api/cinemas`        | Ajoute un cinéma                        |
-| DELETE  | `/api/cinemas/:id`    | Supprime un cinéma                      |
 | GET     | `/api/showtimes`      | Liste des séances, triées par date (`?movie=<id>` pour un seul film) |
 | GET     | `/api/showtimes/:id`  | Détail d'une séance                     |
 | POST    | `/api/showtimes`      | Ajoute une séance                       |
@@ -85,7 +93,7 @@ Limites connues : les titres sont associés au premier résultat de recherche TM
 ## Tests
 
 ```sh
-cd backend && npm test    # node:test — routes, service TMDB, lecture des horaires SerpApi
+cd backend && npm test    # node:test — routes, clé API, service TMDB, lecture des horaires SerpApi
 cd frontend && npm test   # Vitest + Vue Test Utils — accueil, page film (séances par jour), cinémas, recherche
 ```
 

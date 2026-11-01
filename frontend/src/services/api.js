@@ -4,8 +4,8 @@ const api = axios.create({
   baseURL: 'https://bobine-backend.onrender.com/api',
 })
 
-export const getMovies = async () => {
-  const response = await api.get('/movies')
+export const getMovies = async (params) => {
+  const response = await api.get('/movies', { params })
   return response.data
 }
 

@@ -81,6 +81,23 @@ test('GET /movies renvoie la liste des films', async (t) => {
   assert.deepStrictEqual(await res.json(), [{ title: 'Inception' }]);
 });
 
+test('GET /movies?showing=true ne renvoie que les films avec une séance à venir', async (t) => {
+  const distinct = t.mock.method(Showtime, 'distinct', async () => ['m1', 'm2']);
+  const find = t.mock.method(Movie, 'find', async () => [{ title: 'Clayface' }]);
+  const before = Date.now();
+  await fetch(`${base}/movies?showing=true`);
+  const [field, query] = distinct.mock.calls[0].arguments;
+  assert.strictEqual(field, 'movie');
+  assert.ok(query.datetime.$gte.getTime() >= before);
+  assert.deepStrictEqual(find.mock.calls[0].arguments[0], { _id: { $in: ['m1', 'm2'] } });
+});
+
+test('GET /movies sans showing ne filtre pas', async (t) => {
+  const find = t.mock.method(Movie, 'find', async () => []);
+  await fetch(`${base}/movies`);
+  assert.deepStrictEqual(find.mock.calls[0].arguments[0], {});
+});
+
 test('POST /movies complète le film avec les données TMDB', async (t) => {
   t.mock.method(Movie.prototype, 'save', async function () { return this; });
   const res = await post('/movies', { tmdbId: 27205 });
