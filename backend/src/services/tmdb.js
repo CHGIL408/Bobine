@@ -31,9 +31,16 @@ const getMovieById = async (tmdbId) => {
   });
   const movie = response.data;
 
+  // Pas de résumé français : on prend l'anglais plutôt que rien
+  let synopsis = movie.overview;
+  if (!synopsis) {
+    const en = await tmdbApi.get(`/movie/${tmdbId}`, { params: { language: 'en-US' } });
+    synopsis = en.data.overview || '';
+  }
+
   return {
     title: movie.title,
-    synopsis: movie.overview,
+    synopsis,
     releaseDate: movie.release_date,
     duration: movie.runtime,
     genre: movie.genres.map((g) => g.name),

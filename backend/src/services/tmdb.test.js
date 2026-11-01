@@ -5,11 +5,13 @@ const axios = require('axios');
 
 const responses = {};
 const requests = [];
-// axios.create est appelé au chargement de tmdb.js : on le remplace avant le require
+// axios.create est appelé au chargement de tmdb.js : on le remplace avant le require.
+// Une réponse peut dépendre de la langue : responses[url] = { 'fr-FR': …, 'en-US': … }
 axios.create = () => ({
   get: async (url, config) => {
     requests.push({ url, config });
-    return { data: responses[url.split('?')[0]] };
+    const data = responses[url.split('?')[0]];
+    return { data: data?.[config?.params?.language] ?? data };
   },
 });
 const { getMovieById, searchMovieId } = require('./tmdb');
@@ -90,4 +92,15 @@ test('searchMovieId garde le premier résultat sans film récent, ou renvoie nul
 
   responses['/search/movie'] = { results: [] };
   assert.strictEqual(await searchMovieId('Film inexistant'), null);
+});
+
+test("getMovieById prend le résumé anglais quand le français est vide", async () => {
+  responses['/movie/2'] = {
+    'fr-FR': { title: 'Vous voyez tout', overview: '', genres: [], poster_path: null, backdrop_path: null },
+    'en-US': { overview: 'A documentary about seeing everything.' },
+  };
+  const movie = await getMovieById(2);
+  assert.strictEqual(movie.title, 'Vous voyez tout');
+  assert.strictEqual(movie.synopsis, 'A documentary about seeing everything.');
+  assert.strictEqual(requests.at(-1).config.params.language, 'en-US');
 });
