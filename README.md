@@ -7,8 +7,8 @@ Application web de cinéma : films à l'affiche, cinémas de Québec et leurs s�
 
 ## Fonctionnalités
 
-- Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette avec sa prochaine séance, filtres par jour, heure (dès 17 h, 19 h, 21 h) et cinéma, recherche et filtre par genre, prochaines heures de chaque film, les cinémas
-- Favoris : un bouton sur la page d'un film, puis un onglet « Favoris » sur l'accueil ; gardés dans le navigateur (pas de compte)
+- Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette avec sa prochaine séance, filtres par jour, heure (dès 17 h, 19 h, 21 h) et cinéma, recherche et filtre par genre, prochaines heures de chaque film avec leur format de salle, les cinémas
+- Favoris : un bouton sur la page d'un film, et un onglet « Favoris » toujours présent sur l'accueil ; gardés dans le navigateur (pas de compte)
 - Page d'un film : fiche avec réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec) ; chaque heure s'ajoute à l'agenda (fichier `.ics`) ; lien « Réserver » vers le site du cinéma ; bouton « Partager » (menu du téléphone, sinon copie du lien)
 - Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire, site et les films encore à l'affiche aujourd'hui (heures et format), ou la prochaine séance ; bouton « Trier par distance » (position demandée au navigateur, jamais envoyée au serveur ; coordonnées des cinémas approximatives, champ `location` à préciser au besoin)
 - Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB (fiche en français, résumé anglais si le français manque)
