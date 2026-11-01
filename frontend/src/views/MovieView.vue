@@ -28,16 +28,35 @@
               <dd>{{ movie.cast.join(', ') }}</dd>
             </template>
           </dl>
-          <button
-            v-if="movie.trailerKey"
-            type="button"
-            class="primary"
-            :aria-expanded="showTrailer"
-            aria-controls="trailer"
-            @click="showTrailer = !showTrailer"
-          >
-            {{ showTrailer ? 'Masquer la bande-annonce' : 'Voir la bande-annonce' }}
-          </button>
+          <div v-if="movie._id" class="buttons">
+            <button
+              v-if="movie.trailerKey"
+              type="button"
+              class="primary"
+              :aria-expanded="showTrailer"
+              aria-controls="trailer"
+              @click="showTrailer = !showTrailer"
+            >
+              {{ showTrailer ? 'Masquer la bande-annonce' : 'Voir la bande-annonce' }}
+            </button>
+            <button
+              type="button"
+              class="secondary fav"
+              :aria-pressed="favorites.has(movie._id)"
+              @click="favorites.toggle(movie._id)"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M8 13.5 2.6 8.3A3.2 3.2 0 0 1 8 4.2a3.2 3.2 0 0 1 5.4 4.1Z"
+                  :fill="favorites.has(movie._id) ? 'currentColor' : 'none'"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              {{ favorites.has(movie._id) ? 'Dans mes favoris' : 'Ajouter aux favoris' }}
+            </button>
+          </div>
         </div>
       </section>
 
@@ -105,11 +124,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMovie, getShowtimes } from '@/services/api'
+import { useFavoritesStore } from '@/stores/favorites'
 import { showtimeIcs, icsHref } from '@/utils/ics'
 import { dayKey, dayLabel, time } from '@/utils/time'
 
 
 const route = useRoute()
+const favorites = useFavoritesStore()
 const movie = ref({})
 const showtimes = ref([])
 const status = ref('loading')
@@ -406,6 +427,47 @@ ul {
   transition: transform 0.1s, background 0.15s;
 }
 
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--control-height);
+  padding: 0 16px;
+  background: none;
+  border: 1px solid var(--control);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+
+.secondary:hover {
+  border-color: var(--text);
+}
+
+.secondary:active {
+  transform: scale(0.97);
+}
+
+.secondary svg {
+  width: 16px;
+  height: 16px;
+}
+
+.fav[aria-pressed='true'] svg {
+  color: var(--accent);
+}
+
 .primary:hover {
   background: #e6e6e6;
 }
@@ -490,6 +552,14 @@ button:focus-visible {
 
   .synopsis,
   .credits,
+  .buttons {
+    grid-column: 1 / -1;
+  }
+
+  .buttons > * {
+    flex: 1 1 auto;
+  }
+
   .primary {
     grid-column: 1 / -1;
   }
@@ -498,7 +568,7 @@ button:focus-visible {
     display: contents;
   }
 
-  .info > :not(.synopsis, .credits, .primary) {
+  .info > :not(.synopsis, .credits, .primary, .buttons) {
     grid-column: 2;
   }
 
