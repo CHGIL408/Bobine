@@ -11,6 +11,7 @@ const movieSchema = new mongoose.Schema(
     cast: [{ type: String }],
     poster: { type: String },
     backdrop: { type: String },
+    trailerKey: { type: String }, // identifiant de la vidéo YouTube
     rating: { type: Number },
     tmdbId: { type: Number, unique: true },
     language: { type: String, default: 'fr' },
