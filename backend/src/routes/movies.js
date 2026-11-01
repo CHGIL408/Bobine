@@ -1,11 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const Movie = require('../models/Movie');
+const Showtime = require('../models/Showtime');
 const { getMovieById } = require('../services/tmdb');
-// GET TOUS LES FILMS
+// GET TOUS LES FILMS (?showing=true : seulement ceux qui ont une séance à venir)
 router.get('/', async (req, res) => {
   try {
-    const movies = await Movie.find();
+    const filter = {};
+    if (req.query.showing === 'true') {
+      filter._id = { $in: await Showtime.distinct('movie', { datetime: { $gte: new Date() } }) };
+    }
+    const movies = await Movie.find(filter);
     res.json(movies);
   } catch (err) {
     res.status(500).json({ error: err.message });

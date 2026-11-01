@@ -39,7 +39,19 @@ test('getMovieById transforme la réponse TMDB en film Bobine', async () => {
   assert.strictEqual(requests.at(-1).url, '/movie/27205?language=fr-FR');
 });
 
-test('searchMovieId renvoie le premier résultat, ou null', async () => {
+test('searchMovieId préfère un film sorti récemment', async () => {
+  const now = new Date('2026-11-01T12:00:00Z');
+  responses['/search/movie'] = {
+    results: [
+      { id: 50031, release_date: '1936-11-06' },
+      { id: 1500001, release_date: '' },
+      { id: 1500002, release_date: '2026-10-10' },
+    ],
+  };
+  assert.strictEqual(await searchMovieId('Rembrandt', now), 1500002);
+});
+
+test('searchMovieId garde le premier résultat sans film récent, ou renvoie null', async () => {
   responses['/search/movie'] = { results: [{ id: 1381071 }, { id: 18 }] };
   assert.strictEqual(await searchMovieId('Godzilla Minus Zero'), 1381071);
   assert.deepStrictEqual(requests.at(-1).config.params, {

@@ -29,12 +29,18 @@ const getMovieById = async (tmdbId) => {
   };
 };
 
-// shortcut: takes TMDB's first hit, a remake with the same title can be picked; pass a year if that happens
-const searchMovieId = async (title) => {
+const RECENT_DAYS = 548; // ~18 mois : un film en salle est sorti récemment (ou sort bientôt)
+
+// Préfère le premier résultat sorti récemment : "Rembrandt" en salle n'est pas le film de 1936.
+// shortcut: une reprise d'un vieux film (ex. ressortie d'Halloween) prendra une version récente du même nom s'il en existe une
+const searchMovieId = async (title, now = new Date()) => {
   const response = await tmdbApi.get('/search/movie', {
     params: { query: title, language: 'fr-FR', region: 'CA' },
   });
-  return response.data.results[0]?.id ?? null;
+  const results = response.data.results;
+  const cutoff = now.getTime() - RECENT_DAYS * 864e5;
+  const recent = results.find((m) => m.release_date && Date.parse(m.release_date) >= cutoff);
+  return (recent ?? results[0])?.id ?? null;
 };
 
 module.exports = { getMovieById, searchMovieId };
