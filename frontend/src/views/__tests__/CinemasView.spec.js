@@ -6,8 +6,8 @@ import { getCinemas, getMovies, getUpcomingShowtimes } from '@/services/api'
 vi.mock('@/services/api', () => ({ getCinemas: vi.fn(), getMovies: vi.fn(), getUpcomingShowtimes: vi.fn() }))
 
 const CINEMAS = [
-  { _id: 'b', name: 'Cinéma Cineplex Odeon Beauport', address: '825 Rue Clemenceau', city: 'Québec', website: 'https://www.cineplex.com' },
-  { _id: 's', name: 'Cinéma Cineplex Odeon Ste-Foy', address: '1200 Autoroute Duplessis', city: 'Québec', phone: '418-555-0100' },
+  { _id: 'b', name: 'Cinéma Cineplex Odeon Beauport', address: '825 Rue Clemenceau', city: 'Québec', website: 'https://www.cineplex.com', location: { coordinates: [-71.2056, 46.8601] } },
+  { _id: 's', name: 'Cinéma Cineplex Odeon Ste-Foy', address: '1200 Autoroute Duplessis', city: 'Québec', phone: '418-555-0100', location: { coordinates: [-71.3523, 46.7864] } },
 ]
 // 8 films ; "Maintenant" = dimanche 1er nov. 2026, 15 h à Québec (UTC-5)
 const MOVIES = Array.from({ length: 8 }, (_, i) => ({ _id: `m${i}`, title: `Film ${i}`, poster: `p${i}` }))
@@ -86,6 +86,28 @@ describe('CinemasView', () => {
     expect(stefoy.find('.today p').text().replace(/\s+/g, ' ')).toBe(
       "Plus de séance aujourd'hui. Prochaine : Demain 13 h 05, Film 2.",
     )
+  })
+
+  it('trie les cinémas du plus proche au plus loin', async () => {
+    const getCurrentPosition = vi.fn((ok) => ok({ coords: { latitude: 46.7800, longitude: -71.3400 } })) // près de Ste-Foy
+    vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition } })
+    const w = await mountView()
+    expect(cards(w).map((c) => c.find('h2').text())).toEqual(['Cinéma Cineplex Odeon Beauport', 'Cinéma Cineplex Odeon Ste-Foy'])
+    await w.find('.locate button').trigger('click')
+    expect(cards(w).map((c) => c.find('h2').text())).toEqual(['Cinéma Cineplex Odeon Ste-Foy', 'Cinéma Cineplex Odeon Beauport'])
+    expect(cards(w)[0].find('.distance').text()).toBe('À 1,2 km')
+    expect(w.find('.locate button').text()).toBe('Mettre à jour ma position')
+    vi.unstubAllGlobals()
+  })
+
+  it('explique quand la localisation est refusée', async () => {
+    const getCurrentPosition = vi.fn((ok, fail) => fail({ code: 1 }))
+    vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition } })
+    const w = await mountView()
+    await w.find('.locate button').trigger('click')
+    expect(w.find('.locate [role=status]').text()).toContain('Localisation refusée')
+    expect(cards(w)[0].find('.distance').exists()).toBe(false)
+    vi.unstubAllGlobals()
   })
 
   it('affiche une erreur et permet de réessayer', async () => {
