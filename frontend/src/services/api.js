@@ -29,3 +29,13 @@ export const getUpcomingShowtimes = async () => {
   const response = await api.get('/showtimes', { params: { upcoming: true, populate: false } })
   return response.data
 }
+
+// Écritures : exigent la clé d'administration (header x-api-key)
+export const addMovie = async (tmdbId, apiKey) => {
+  const response = await api.post('/movies', { tmdbId }, { headers: { 'x-api-key': apiKey } })
+  return response.data
+}
+
+export const deleteMovie = async (id, apiKey) => {
+  await api.delete(`/movies/${id}`, { headers: { 'x-api-key': apiKey } })
+}

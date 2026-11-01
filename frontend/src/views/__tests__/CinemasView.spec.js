@@ -17,6 +17,7 @@ const SHOWTIMES = [
   // Beauport aujourd'hui : m1 à 21 h 00 et 16 h 00, m2 à 18 h 30, puis m3…m7 plus tard
   { _id: 'a', movie: 'm1', cinema: 'b', datetime: at('2026-11-01T16:00:00') },
   { _id: 'b1', movie: 'm2', cinema: 'b', datetime: at('2026-11-01T18:30:00') },
+  { _id: 'b2', movie: 'm2', cinema: 'b', datetime: at('2026-11-01T18:30:00') }, // même heure, autre salle
   { _id: 'c', movie: 'm1', cinema: 'b', datetime: at('2026-11-01T21:00:00'), format: '3D' },
   ...[3, 4, 5, 6, 7].map((n) => ({ _id: `x${n}`, movie: `m${n}`, cinema: 'b', datetime: at(`2026-11-01T22:0${n}:00`) })),
   { _id: 'tom', movie: 'm1', cinema: 'b', datetime: at('2026-11-02T13:00:00') }, // demain : ne compte pas

@@ -135,7 +135,9 @@ const todayAt = (cinema) => {
   for (const s of upcomingByCinema.value.get(cinema._id) ?? []) {
     if (dayKey(new Date(s.datetime)) !== today) continue
     if (!rows.has(s.movie._id)) rows.set(s.movie._id, { movie: s.movie, times: [] })
-    rows.get(s.movie._id).times.push(s.format && s.format !== 'Standard' ? `${time(s.datetime)} ${s.format}` : time(s.datetime))
+    const label = s.format && s.format !== 'Standard' ? `${time(s.datetime)} ${s.format}` : time(s.datetime)
+    const times = rows.get(s.movie._id).times
+    if (!times.includes(label)) times.push(label) // deux salles à la même heure : une seule mention
   }
   return [...rows.values()]
 }

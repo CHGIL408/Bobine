@@ -43,6 +43,7 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     await Movie.findByIdAndDelete(req.params.id);
+    await Showtime.deleteMany({ movie: req.params.id }); // ses séances n'ont plus de sens sans lui
     res.status(204).json({ message: 'Film supprimé avec succès' });
   } catch (err) {
     res.status(500).json({ error: err.message });

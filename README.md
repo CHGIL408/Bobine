@@ -12,6 +12,7 @@ Application web de cinéma : films à l'affiche, cinémas de Québec et leurs s�
 - Page d'un film : fiche avec réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec) ; chaque heure s'ajoute à l'agenda (fichier `.ics`) ; lien « Réserver » vers le site du cinéma ; bouton « Partager » (menu du téléphone, sinon copie du lien)
 - Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire, site et les films encore à l'affiche aujourd'hui (heures et format), ou la prochaine séance ; bouton « Trier par distance » (position demandée au navigateur, jamais envoyée au serveur ; coordonnées des cinémas approximatives, champ `location` à préciser au besoin)
 - Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB (fiche en français, résumé anglais si le français manque)
+- Page `/admin` (non liée dans le menu) : saisir la clé `ADMIN_API_KEY` (gardée seulement dans l'onglet), ajouter un film par son identifiant TMDB, supprimer un film et ses séances
 - Ajout d'un film à partir de son identifiant TMDB (titre, synopsis, affiche, note… récupérés automatiquement), protégé par clé API
 
 ## Structure
@@ -82,7 +83,7 @@ curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: ap
 | GET     | `/api/movies`         | Liste des films (`?showing=true` : seulement ceux qui ont une séance à venir) |
 | GET     | `/api/movies/:id`     | Détail d'un film                        |
 | POST    | `/api/movies`         | Ajoute un film (`{ "tmdbId": 693134 }`) |
-| DELETE  | `/api/movies/:id`     | Supprime un film                        |
+| DELETE  | `/api/movies/:id`     | Supprime un film et ses séances         |
 | GET     | `/api/cinemas`        | Liste des cinémas                       |
 | GET     | `/api/cinemas/:id`    | Détail d'un cinéma                      |
 | POST    | `/api/cinemas`        | Ajoute un cinéma                        |
@@ -94,8 +95,8 @@ curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: ap
 ## Tests
 
 ```sh
-cd backend && npm test    # node:test — routes, clé API, service TMDB, lecture des horaires SerpApi
-cd frontend && npm test   # Vitest + Vue Test Utils — accueil (filtres jour, heure, cinéma, favoris), favoris, page film (séances, bande-annonce, agenda, favoris, partage, réservation), cinémas (films du jour, tri par distance), géolocalisation, recherche, fichier .ics
+cd backend && npm test    # node:test — routes (dont suppression en cascade), clé API, service TMDB, lecture des horaires SerpApi
+cd frontend && npm test   # Vitest + Vue Test Utils — accueil (filtres jour, heure, cinéma, favoris), favoris, page film (séances, bande-annonce, agenda, favoris, partage, réservation), cinémas (films du jour, tri par distance), géolocalisation, administration, recherche, fichier .ics
 ```
 
 Les tests n'utilisent ni la base ni le réseau : les modèles Mongoose, axios et l'API du frontend sont simulés. Ils tournent sur GitHub à chaque push et pull request (`.github/workflows/tests.yml`, onglet **Actions**).
