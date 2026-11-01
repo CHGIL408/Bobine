@@ -1,0 +1,27 @@
+name: Synchroniser les séances
+
+on:
+  schedule:
+    - cron: '0 10 * * *' # tous les jours vers 6 h à Montréal
+  workflow_dispatch: # bouton « Run workflow » pour lancer à la main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run sync-showtimes
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
