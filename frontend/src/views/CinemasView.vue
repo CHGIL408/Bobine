@@ -5,6 +5,13 @@
       <p v-if="status === 'ready'" class="muted">{{ summary }}</p>
     </div>
 
+    <div v-if="status === 'ready' && cinemas.length > 1" class="locate">
+      <button type="button" class="secondary" :disabled="locating" @click="locate">
+        {{ locating ? 'Localisation…' : position ? 'Mettre à jour ma position' : 'Trier par distance' }}
+      </button>
+      <span class="muted" role="status">{{ locateMessage }}</span>
+    </div>
+
     <p v-if="status === 'error'" class="tile message" role="alert">
       Impossible de charger les cinémas.
       <button type="button" class="text-action" @click="load">Réessayer</button>
@@ -18,8 +25,11 @@
     </ul>
 
     <ul v-else class="grid">
-      <li v-for="cinema in cinemas" :key="cinema._id" class="tile">
+      <li v-for="cinema in sortedCinemas" :key="cinema._id" class="tile">
         <h2>{{ cinema.name }}</h2>
+        <p v-if="distanceOf(cinema) != null" class="distance num">
+          À {{ formatDistance(distanceOf(cinema)) }}
+        </p>
         <p class="muted">{{ cinema.address }}<br />{{ cinema.city }}</p>
         <p v-if="cinema.phone" class="num">
           <a :href="`tel:${cinema.phone}`">{{ cinema.phone }}</a>
@@ -70,6 +80,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { getCinemas, getMovies, getUpcomingShowtimes } from '@/services/api'
 import { dayKey, dayLabel, time } from '@/utils/time'
+import { cinemaPoint, distanceKm, formatDistance } from '@/utils/geo'
 
 const LIMIT = 6 // films affichés par cinéma avant « Afficher les N autres »
 
@@ -146,6 +157,47 @@ const nextAt = (cinema) => {
   return s ? { when: `${dayLabel(dayKey(new Date(s.datetime)))} ${time(s.datetime)}`, title: s.movie.title } : null
 }
 
+// Position du visiteur, demandée seulement au clic (jamais envoyée au serveur)
+const position = ref(null)
+const locating = ref(false)
+const locateMessage = ref('')
+
+const locate = () => {
+  if (!navigator.geolocation) {
+    locateMessage.value = 'Votre navigateur ne permet pas de vous localiser.'
+    return
+  }
+  locating.value = true
+  locateMessage.value = ''
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => {
+      position.value = { lat: coords.latitude, lng: coords.longitude }
+      locating.value = false
+      locateMessage.value = 'Du plus proche au plus loin, à vol d’oiseau.'
+    },
+    (err) => {
+      locating.value = false
+      locateMessage.value =
+        err.code === 1
+          ? 'Localisation refusée. Autorisez-la dans votre navigateur pour trier par distance.'
+          : 'Impossible de vous localiser pour le moment.'
+    },
+    { timeout: 10000, maximumAge: 600000 },
+  )
+}
+
+const distanceOf = (cinema) => {
+  const point = cinemaPoint(cinema)
+  return position.value && point ? distanceKm(position.value, point) : null
+}
+
+// Sans position : l'ordre de l'API ; avec : du plus proche au plus loin, cinémas sans coordonnées à la fin
+const sortedCinemas = computed(() =>
+  position.value
+    ? cinemas.value.toSorted((a, b) => (distanceOf(a) ?? Infinity) - (distanceOf(b) ?? Infinity))
+    : cinemas.value,
+)
+
 const mapUrl = (c) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.name}, ${c.address}, ${c.city}`)}`
 </script>
@@ -206,6 +258,41 @@ p {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.locate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: -4px 0 20px;
+}
+
+.secondary {
+  height: var(--control-height);
+  padding: 0 16px;
+  background: none;
+  border: 1px solid var(--control);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.secondary:hover {
+  border-color: var(--text);
+}
+
+.secondary:disabled {
+  color: var(--muted);
+  cursor: progress;
+}
+
+.distance {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .today {
