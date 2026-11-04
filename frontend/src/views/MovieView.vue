@@ -9,7 +9,7 @@
 
     <template v-else>
       <section class="film" aria-labelledby="film-title">
-        <img v-if="movie.poster" class="poster" :src="movie.poster" alt="" />
+        <img v-if="imageOk(movie.poster)" class="poster" :src="movie.poster" alt="" @error="imageFailed(movie.poster)" />
         <div v-else class="poster" aria-hidden="true"></div>
         <div class="info">
           <h1 id="film-title">{{ movie.title ?? 'Chargement…' }}</h1>
@@ -114,9 +114,10 @@
                   <a
                     :href="icsHref(showtimeIcs({ showtime: s, movie }))"
                     :download="fileName(s)"
-                    :aria-label="`Ajouter la séance de ${time(s.datetime)} en ${formatLabel(s.format) === 'STD' ? 'format standard' : s.format} au ${group.cinema.name} à mon agenda`"
+                    :aria-label="`Ajouter la séance de ${time(s.datetime)} en ${formatLabel(s.format) === 'STD' ? 'format standard' : s.format} au ${group.cinema.name}${s.end ? `, ${s.end}` : ''}, à mon agenda`"
                   >
-                    {{ time(s.datetime) }}<span class="format">{{ formatLabel(s.format) }}</span>
+                    <span class="when">{{ time(s.datetime) }}<span class="format">{{ formatLabel(s.format) }}</span></span>
+                    <span v-if="s.end" class="end">{{ s.end }}</span>
                   </a>
                 </li>
               </ul>
@@ -132,12 +133,13 @@
 </template>
 
 <script setup>
+import { imageFailed, imageOk } from '@/utils/images'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getMovie, getShowtimes } from '@/services/api'
 import { useFavoritesStore } from '@/stores/favorites'
 import { showtimeIcs, icsHref } from '@/utils/ics'
-import { dayKey, dayLabel, formatLabel, time } from '@/utils/time'
+import { dayKey, dayLabel, endLabel, formatLabel, time } from '@/utils/time'
 
 
 const route = useRoute()
@@ -213,7 +215,7 @@ const days = computed(() => {
     if (!byDay.has(key)) byDay.set(key, new Map())
     const cinemas = byDay.get(key)
     if (!cinemas.has(s.cinema._id)) cinemas.set(s.cinema._id, { cinema: s.cinema, showtimes: [] })
-    cinemas.get(s.cinema._id).showtimes.push(s)
+    cinemas.get(s.cinema._id).showtimes.push({ ...s, end: endLabel(s.datetime, movie.value.duration) })
   }
   return [...byDay].map(([key, cinemas]) => ({
     key,
@@ -412,16 +414,28 @@ ul {
 
 .times a {
   display: inline-flex;
-  gap: 6px;
-  height: var(--control-height);
-  padding: 0 14px;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  min-height: var(--control-height);
+  padding: 6px 14px;
   background: var(--surface);
   border-radius: 999px;
   color: var(--text);
   font-weight: 500;
   text-decoration: none;
   transition: background 0.15s, transform 0.1s;
+}
+
+.when {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.end {
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 400;
 }
 
 .times a:hover {

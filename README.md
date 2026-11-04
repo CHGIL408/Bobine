@@ -10,7 +10,8 @@ Application web de cinéma : films à l'affiche, cinémas de Québec et leurs s�
 - Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette avec sa prochaine séance, filtres par jour, heure (dès 17 h, 19 h, 21 h) et cinéma, recherche et filtre par genre, prochaines heures de chaque film avec leur format de salle (« STD » quand il n'est pas précisé), les cinémas
 - « Bientôt à l'affiche » sur l'accueil : les 12 prochaines sorties au Canada les plus attendues selon TMDB, avec affiche et date de sortie (lien vers la fiche TMDB) ; les films qui ont déjà des séances n'y sont pas ; liste gardée 6 h par le serveur pour limiter les appels à TMDB
 - Favoris : un bouton sur la page d'un film, et un onglet « Favoris » toujours présent sur l'accueil ; gardés dans le navigateur (pas de compte)
-- Page d'un film : fiche avec réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec) ; chaque heure s'ajoute à l'agenda (fichier `.ics`) ; lien « Réserver » vers le site du cinéma ; bouton « Partager » (menu du téléphone, sinon copie du lien)
+- Page d'un film : fiche avec réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec), avec l'heure de fin estimée (« fin vers 21 h 45 » : durée du film + 15 min de bandes-annonces, arrondie aux 5 min) ; chaque heure s'ajoute à l'agenda (fichier `.ics`, même heure de fin) ; lien « Réserver » vers le site du cinéma ; bouton « Partager » (menu du téléphone, sinon copie du lien)
+- Page « Ce soir » (`/ce-soir`) : toutes les séances de maintenant à minuit, tous cinémas confondus, triées par heure et regroupées par heure, avec cinéma, format et fin estimée ; les séances commencées depuis 15 min au plus restent affichées (« A commencé il y a 12 min ») ; filtre par cinéma ; quand il ne reste rien ce soir, les premières séances de demain
 - Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire, lien vers la page du cinéma sur cineplex.com et les films encore à l'affiche aujourd'hui (heures et format), ou la prochaine séance ; bouton « Trier par distance » (position demandée au navigateur en haute précision, jamais envoyée au serveur ; avertissement si elle n'est connue qu'à plus de 2 km près, par exemple localisée par l'adresse IP ; coordonnées des cinémas vérifiées sur OpenStreetMap)
 - Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB (fiche en français, résumé anglais si le français manque)
 - Page `/admin` (non liée dans le menu) : saisir la clé `ADMIN_API_KEY` (gardée seulement dans l'onglet), ajouter un film par son identifiant TMDB, supprimer un film et ses séances
@@ -89,7 +90,7 @@ curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: ap
 | GET     | `/api/cinemas`        | Liste des cinémas                       |
 | GET     | `/api/cinemas/:id`    | Détail d'un cinéma                      |
 | POST    | `/api/cinemas`        | Ajoute un cinéma                        |
-| GET     | `/api/showtimes`      | Liste des séances, triées par date. `?movie=<id>` : un seul film ; `?upcoming=true` : à venir seulement ; `?populate=false` : ids du film et du cinéma au lieu des fiches complètes (liste légère) |
+| GET     | `/api/showtimes`      | Liste des séances, triées par date. `?movie=<id>` : un seul film ; `?upcoming=true` : à venir seulement (`&since=15` : y compris celles commencées depuis 15 min au plus, 60 au maximum) ; `?populate=false` : ids du film et du cinéma au lieu des fiches complètes (liste légère) |
 | GET     | `/api/showtimes/:id`  | Détail d'une séance                     |
 | POST    | `/api/showtimes`      | Ajoute une séance                       |
 | DELETE  | `/api/showtimes/:id`  | Supprime une séance                     |
@@ -98,8 +99,10 @@ curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: ap
 
 ```sh
 cd backend && npm test    # node:test — routes (dont suppression en cascade), clé API, service TMDB, lecture des horaires SerpApi
-cd frontend && npm test   # Vitest + Vue Test Utils — accueil (filtres jour, heure, cinéma, favoris), favoris, page film (séances, bande-annonce, agenda, favoris, partage, réservation), cinémas (films du jour, tri par distance), géolocalisation, administration, recherche, fichier .ics
+cd frontend && npm test   # Vitest + Vue Test Utils — accueil (filtres jour, heure, cinéma, favoris), favoris, page film (séances, bande-annonce, agenda, favoris, partage, réservation), cinémas (films du jour, tri par distance), page « Ce soir » (fenêtre jusqu'à minuit, séances commencées, passage de minuit, filtre), heure de fin, géolocalisation, administration, recherche, fichier .ics
 ```
+
+Pour tester l'affichage avec des données extrêmes (titres très longs, affiches cassées, liste vide, 300 séances), lancer `npm run dev` puis ajouter `?data=worst`, `empty`, `one` ou `huge` à l'adresse ; un sélecteur apparaît en bas de l'écran. Ces données (`frontend/src/dev/fixtures.js`) ne sont jamais incluses dans le build de production.
 
 Les tests n'utilisent ni la base ni le réseau : les modèles Mongoose, axios et l'API du frontend sont simulés. Ils tournent sur GitHub à chaque push et pull request (`.github/workflows/tests.yml`, onglet **Actions**).
 

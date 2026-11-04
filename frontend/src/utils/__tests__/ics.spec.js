@@ -5,7 +5,7 @@ const cinema = { name: 'Cinéma Cineplex Odeon Ste-Foy', address: '1200 Autorout
 const showtime = { _id: 's1', cinema, datetime: '2026-11-01T21:30:00.000Z', format: 'IMAX' }
 
 describe('showtimeIcs', () => {
-  it('crée un événement avec début, fin selon la durée du film et lieu', () => {
+  it('crée un événement avec début, fin selon la durée du film (+ bandes-annonces) et lieu', () => {
     const ics = showtimeIcs({
       showtime,
       movie: { title: 'Resident Evil', duration: 95 },
@@ -17,7 +17,7 @@ describe('showtimeIcs', () => {
     expect(lines).toContain('UID:s1@bobine')
     expect(lines).toContain('DTSTAMP:20261101T120000Z')
     expect(lines).toContain('DTSTART:20261101T213000Z')
-    expect(lines).toContain('DTEND:20261101T230500Z')
+    expect(lines).toContain('DTEND:20261101T232000Z') // 21 h 30 + 95 min + 15 min
     expect(lines).toContain('SUMMARY:Resident Evil (IMAX)')
     expect(lines).toContain('LOCATION:Cinéma Cineplex Odeon Ste-Foy\\, 1200 Autoroute Duplessis\\, Québec')
   })

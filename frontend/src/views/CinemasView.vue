@@ -46,7 +46,7 @@
           <template v-if="todayAt(cinema).length">
             <ul class="films">
               <li v-for="row in visibleRows(cinema)" :key="row.movie._id">
-                <img v-if="row.movie.poster" :src="row.movie.poster" alt="" loading="lazy" />
+                <img v-if="imageOk(row.movie.poster)" :src="row.movie.poster" alt="" loading="lazy" @error="imageFailed(row.movie.poster)" />
                 <span v-else class="thumb" aria-hidden="true"></span>
                 <div>
                   <RouterLink :to="`/movies/${row.movie._id}`">{{ row.movie.title }}</RouterLink>
@@ -77,8 +77,10 @@
 </template>
 
 <script setup>
+import { imageFailed, imageOk } from '@/utils/images'
 import { computed, onMounted, ref } from 'vue'
 import { getCinemas, getMovies, getUpcomingShowtimes } from '@/services/api'
+import { idOf } from '@/utils/cinemas'
 import { dayKey, dayLabel, time, timeWithFormat } from '@/utils/time'
 import { cinemaPoint, distanceKm, formatDistance } from '@/utils/geo'
 
@@ -111,7 +113,6 @@ const summary = computed(() => {
   return `${n} cinéma${n > 1 ? 's' : ''}${cities.length === 1 ? ` à ${cities[0]}` : ''}`
 })
 
-const idOf = (ref) => ref?._id ?? ref // id seul, ou objet peuplé
 
 // Séances encore à venir, par cinéma (la liste arrive triée par date)
 const upcomingByCinema = computed(() => {

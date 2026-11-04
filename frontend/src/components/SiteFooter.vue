@@ -4,6 +4,7 @@
       <p class="brand">Bobine <span class="muted">· Films et séances à Québec</span></p>
       <nav aria-label="Navigation du pied de page">
         <RouterLink to="/">Films</RouterLink>
+        <RouterLink to="/ce-soir">Ce soir</RouterLink>
         <RouterLink to="/cinemas">Cinémas</RouterLink>
       </nav>
     </div>

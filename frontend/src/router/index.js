@@ -18,6 +18,12 @@ const router = createRouter({
       component: () => import('../views/MovieView.vue'),
     },
     {
+      path: '/ce-soir',
+      name: 'tonight',
+      meta: { title: 'Ce soir' },
+      component: () => import('../views/TonightView.vue'),
+    },
+    {
       path: '/cinemas',
       name : 'cinemas',
       meta: { title: 'Cinémas' },

@@ -228,4 +228,15 @@ describe('HomeView', () => {
     expect(w.find('.feature').attributes('aria-busy')).toBe('false')
     expect(leadTitle(w)).toBe('Inception')
   })
+
+  it("prend l'affiche quand la grande image du film en vedette ne se charge pas", async () => {
+    getMovies.mockResolvedValue([{ ...MOVIES[0], rating: 9.9, backdrop: 'https://image.tmdb.org/t/p/w500/casse.jpg', poster: 'affiche-ok' }, MOVIES[1]])
+    const w = await mountHome()
+    expect(w.find('.feature img').attributes('src')).toBe('https://image.tmdb.org/t/p/w1280/casse.jpg')
+    await w.find('.feature img').trigger('error')
+    expect(w.find('.feature img').attributes('src')).toBe('affiche-ok')
+    await w.find('.feature img').trigger('error')
+    expect(w.find('.feature img').exists()).toBe(false)
+    expect(w.find('.feature .backdrop.placeholder').exists()).toBe(true)
+  })
 })

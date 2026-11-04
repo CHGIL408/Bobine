@@ -151,3 +151,15 @@ test('GET /movies/upcoming répond 502 si TMDB échoue', async (t) => {
   const res = await fetch(`${base}/movies/upcoming`);
   assert.strictEqual(res.status, 502);
 });
+
+test('GET /showtimes?upcoming=true&since=15 inclut les séances commencées depuis 15 min, 60 au plus', async (t) => {
+  const find = t.mock.method(Showtime, 'find', () => query([]));
+  const before = Date.now();
+  await fetch(`${base}/showtimes?upcoming=true&since=15&populate=false`);
+  const from = find.mock.calls[0].arguments[0].datetime.$gte.getTime();
+  assert.ok(from <= before - 15 * 60e3 + 1000 && from >= before - 15 * 60e3 - 1000);
+
+  await fetch(`${base}/showtimes?upcoming=true&since=9999`);
+  const capped = find.mock.calls[1].arguments[0].datetime.$gte.getTime();
+  assert.ok(capped >= before - 60 * 60e3 - 1000);
+});

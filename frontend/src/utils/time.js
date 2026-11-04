@@ -4,6 +4,13 @@ export const TZ = 'America/Toronto'
 // Date -> "2026-11-01"
 export const dayKey = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(date)
 
+// "2026-11-01" -> "2026-11-02" : par le calendrier, pas en ajoutant 24 h (faux les jours de 23 h ou 25 h)
+export const nextDayKey = (key) => {
+  const d = new Date(`${key}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
 // ISO -> "16 h 30"
 export const time = (iso) =>
   new Date(iso).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', timeZone: TZ })
@@ -26,11 +33,28 @@ export const minutesOfDay = (iso) => {
 // "2026-11-01" -> "Aujourd'hui" / "Demain" / "mar. 3 nov."
 export const dayLabel = (key, now = new Date()) => {
   if (key === dayKey(now)) return "Aujourd'hui"
-  if (key === dayKey(new Date(now.getTime() + 864e5))) return 'Demain'
+  if (key === nextDayKey(dayKey(now))) return 'Demain'
   return new Date(`${key}T12:00:00Z`).toLocaleDateString('fr-CA', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
     timeZone: 'UTC',
   })
+}
+
+// Bandes-annonces et publicités avant le film, chez Cineplex : environ 15 min
+export const TRAILERS_MINUTES = 15
+
+// Heure de fin estimée d'une séance (Date), arrondie aux 5 min suivantes ; null si la durée est inconnue
+export const endOf = (iso, duration) => {
+  if (!duration) return null
+  const end = new Date(iso).getTime() + (duration + TRAILERS_MINUTES) * 60e3
+  const step = 5 * 60e3
+  return new Date(Math.ceil(end / step) * step)
+}
+
+// "fin vers 21 h 45", ou '' si la durée est inconnue
+export const endLabel = (iso, duration) => {
+  const end = endOf(iso, duration)
+  return end ? `fin vers ${time(end)}` : ''
 }

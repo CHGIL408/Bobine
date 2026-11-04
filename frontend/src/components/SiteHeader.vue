@@ -16,6 +16,7 @@
     </RouterLink>
     <nav aria-label="Navigation principale">
       <RouterLink to="/">Films</RouterLink>
+      <RouterLink to="/ce-soir">Ce soir</RouterLink>
       <RouterLink to="/cinemas">Cinémas</RouterLink>
     </nav>
   </header>

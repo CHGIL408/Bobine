@@ -5,10 +5,14 @@ const Showtime = require('../models/Showtime');
 router.get('/', async (req, res) => {
   try {
     // ?movie=<id> : un seul film ; ?upcoming=true : séances à venir ;
+    // ?since=15 (avec upcoming) : inclut aussi celles commencées depuis 15 min au plus (max 60) ;
     // ?populate=false : ids seulement (liste légère pour filtrer côté navigateur)
     const filter = {};
     if (req.query.movie) filter.movie = req.query.movie;
-    if (req.query.upcoming === 'true') filter.datetime = { $gte: new Date() };
+    if (req.query.upcoming === 'true') {
+      const since = Math.min(Math.max(Number(req.query.since) || 0, 0), 60);
+      filter.datetime = { $gte: new Date(Date.now() - since * 60e3) };
+    }
     let query = Showtime.find(filter).sort('datetime');
     query =
       req.query.populate === 'false'

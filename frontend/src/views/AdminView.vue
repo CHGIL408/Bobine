@@ -55,7 +55,7 @@
         </p>
         <ul v-else>
           <li v-for="movie in sortedMovies" :key="movie._id">
-            <img v-if="movie.poster" :src="movie.poster" alt="" loading="lazy" />
+            <img v-if="imageOk(movie.poster)" :src="movie.poster" alt="" loading="lazy" @error="imageFailed(movie.poster)" />
             <span v-else class="thumb" aria-hidden="true"></span>
             <div>
               <RouterLink :to="`/movies/${movie._id}`">{{ movie.title }}</RouterLink>
@@ -78,6 +78,7 @@
 </template>
 
 <script setup>
+import { imageFailed, imageOk } from '@/utils/images'
 import { computed, onMounted, ref } from 'vue'
 import { addMovie, deleteMovie, getMovies } from '@/services/api'
 

@@ -1,4 +1,5 @@
 // Fichier calendrier (.ics, RFC 5545) pour une séance : Google Agenda, Outlook, Calendrier iPhone.
+import { endOf } from './time'
 
 // 2026-11-01T21:30:00.000Z -> 20261101T213000Z
 const toIcsDate = (date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
@@ -13,8 +14,9 @@ const escape = (text = '') =>
 
 export const showtimeIcs = ({ showtime, movie, now = new Date() }) => {
   const start = new Date(showtime.datetime)
-  const minutes = movie.duration || 120 // durée inconnue : 2 h par défaut
-  const end = new Date(start.getTime() + minutes * 60e3)
+  // durée connue : même fin que « fin vers » sur le site (film + bandes-annonces, arrondi aux 5 min) ;
+  // durée inconnue : le site n'affiche pas de fin, l'agenda réserve 2 h pour avoir un événement utilisable
+  const end = endOf(showtime.datetime, movie.duration) ?? new Date(start.getTime() + 120 * 60e3)
   const { cinema } = showtime
   const format = showtime.format && showtime.format !== 'Standard' ? ` (${showtime.format})` : ''
   return [

@@ -1,6 +1,12 @@
 <script setup>
 import SiteHeader from './components/SiteHeader.vue';
 import SiteFooter from './components/SiteFooter.vue';
+import { defineAsyncComponent } from 'vue';
+
+// sélecteur de données de test, seulement avec `npm run dev`
+const DevDataToggle = import.meta.env.DEV
+  ? defineAsyncComponent(() => import('./components/dev/DevDataToggle.vue'))
+  : null;
 
 </script>
 
@@ -15,6 +21,7 @@ import SiteFooter from './components/SiteFooter.vue';
     </RouterView>
   </div>
   <SiteFooter />
+  <DevDataToggle v-if="DevDataToggle" />
 </template>
 
 <style scoped>

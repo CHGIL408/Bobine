@@ -8,7 +8,7 @@
         <span class="nowrap">{{ rating(bestRated?.rating) }}<template v-if="bestRated?.rating"> /10</template></span>
       </p>
       <p v-else-if="status === 'loading'" class="subline" role="status">
-        {{ slow ? 'Le serveur se réveille, ça peut prendre jusqu’à une minute…' : 'Chargement des films…' }}
+        {{ slow ? SLOW_MESSAGE : 'Chargement des films…' }}
       </p>
     </div>
 
@@ -48,7 +48,8 @@
         </div>
       </template>
       <template v-else-if="lead">
-        <img class="backdrop" :src="hiRes(lead.backdrop) || lead.poster" alt="" />
+        <img v-if="leadImage" class="backdrop" :src="leadImage" alt="" @error="imageFailed(leadImage)" />
+        <div v-else class="backdrop placeholder" aria-hidden="true"></div>
         <div class="lead-info">
           <h2>{{ lead.title }}</h2>
           <p class="meta">{{ year(lead) }} · {{ duration(lead.duration) }} · {{ lead.genre.join(', ') }}</p>
@@ -107,7 +108,10 @@
           </thead>
           <tbody>
             <tr v-for="movie in rest" :key="movie._id">
-              <td class="thumb"><img :src="movie.poster" alt="" loading="lazy" /></td>
+              <td class="thumb">
+                <img v-if="imageOk(movie.poster)" :src="movie.poster" alt="" loading="lazy" @error="imageFailed(movie.poster)" />
+                <span v-else class="thumb-ph" aria-hidden="true"></span>
+              </td>
               <td class="identity">
                 <RouterLink :to="`/movies/${movie._id}`">{{ movie.title }}</RouterLink>
                 <span class="sub">{{ movie.genre.join(', ') }}</span>
@@ -145,7 +149,7 @@
       <ul>
         <li v-for="movie in comingSoonList" :key="movie.tmdbId">
           <a :href="`https://www.themoviedb.org/movie/${movie.tmdbId}`" target="_blank" rel="noopener">
-            <img v-if="movie.poster" :src="movie.poster" alt="" loading="lazy" />
+            <img v-if="imageOk(movie.poster)" :src="movie.poster" alt="" loading="lazy" @error="imageFailed(movie.poster)" />
             <span v-else class="no-poster" aria-hidden="true"></span>
             <span class="title">{{ movie.title }}</span>
             <span class="visually-hidden"> (fiche TMDB, nouvel onglet)</span>
@@ -158,7 +162,10 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { imageFailed, imageOk } from '@/utils/images'
+import { onMounted, ref, computed } from 'vue'
+import { idOf, shortCinemaName as shortName } from '@/utils/cinemas'
+import { SLOW_MESSAGE, useSlowLoading } from '@/utils/slowLoading'
 import { getMovies, getCinemas, getUpcomingShowtimes, getComingSoon } from '../services/api.js'
 import { dayKey, dayLabel, minutesOfDay, timeWithFormat } from '@/utils/time'
 import SearchBar from '@/components/SearchBar.vue'
@@ -176,13 +183,10 @@ const after = ref(0) // minutes depuis minuit
 const selectedCinema = ref('')
 
 // Le backend gratuit dort quand personne ne l'utilise : après 3 s, on explique l'attente
-const slow = ref(false)
-let slowTimer
+const { slow, start: startSlow, stop: stopSlow } = useSlowLoading()
 const load = async () => {
   status.value = 'loading'
-  slow.value = false
-  clearTimeout(slowTimer)
-  slowTimer = setTimeout(() => (slow.value = true), 3000)
+  startSlow()
   try {
     ;[movies.value, cinemas.value, showtimes.value] = await Promise.all([
       getMovies({ showing: true }),
@@ -193,10 +197,9 @@ const load = async () => {
   } catch {
     status.value = 'error'
   } finally {
-    clearTimeout(slowTimer)
+    stopSlow()
   }
 }
-onUnmounted(() => clearTimeout(slowTimer))
 // Prochaines sorties : chargées à part, une panne de TMDB ne doit pas casser l'accueil
 const comingSoon = ref([])
 const loadComingSoon = async () => {
@@ -224,7 +227,6 @@ const releaseDay = (iso) => {
 const FAVORITES = 'Favoris' // toujours visible, pour qu'on sache que la fonction existe
 const genres = computed(() => ['Tous', FAVORITES, ...new Set(movies.value.flatMap((m) => m.genre))])
 
-const idOf = (ref) => ref?._id ?? ref // id seul, ou objet peuplé
 const whenWhereSet = computed(() => Boolean(selectedDay.value || after.value || selectedCinema.value))
 const resetWhenWhere = () => {
   selectedDay.value = ''
@@ -270,9 +272,9 @@ const filteredMovies = computed(() => {
 
 const bestRated = computed(() => movies.value.toSorted((a, b) => b.rating - a.rating)[0])
 const lead = computed(() => filteredMovies.value[0])
+const leadImage = computed(() => [hiRes(lead.value?.backdrop), lead.value?.poster].find(imageOk))
 const rest = computed(() => filteredMovies.value.slice(1))
 
-const shortName = (name) => name.replace(/^Cinéma Cineplex /, '')
 const cinemaName = (id) => shortName(cinemas.value.find((c) => c._id === id)?.name ?? '')
 
 // { when: "Aujourd'hui 19 h 30", where: "Odeon Beauport" }
@@ -564,12 +566,17 @@ th:last-child {
   padding-left: 12px;
 }
 
-.thumb img {
+.thumb img,
+.thumb-ph {
   width: 48px;
   height: 72px;
   object-fit: cover;
   border-radius: var(--radius-thumb);
   display: block;
+}
+
+.thumb-ph {
+  background: var(--surface);
 }
 
 .identity {
