@@ -7,6 +7,9 @@
         {{ countLabel(movies.length) }} · le mieux noté : {{ bestRated?.title ?? '—' }},
         <span class="nowrap">{{ rating(bestRated?.rating) }}<template v-if="bestRated?.rating"> /10</template></span>
       </p>
+      <p v-else-if="status === 'loading'" class="subline" role="status">
+        {{ slow ? 'Le serveur se réveille, ça peut prendre jusqu’à une minute…' : 'Chargement des films…' }}
+      </p>
     </div>
 
     <div v-if="status === 'ready'" class="filters" role="group" aria-label="Quand et où">
@@ -32,8 +35,19 @@
       <button type="button" class="text-action" @click="load">Réessayer</button>
     </p>
 
-    <section v-else class="feature" aria-label="Film en vedette">
-      <template v-if="lead">
+    <section v-else class="feature" aria-label="Film en vedette" :aria-busy="status === 'loading'">
+      <template v-if="status === 'loading'">
+        <div class="backdrop placeholder" aria-hidden="true"></div>
+        <div class="lead-info" aria-hidden="true">
+          <span class="bar heading"></span>
+          <span class="bar w-40"></span>
+          <span class="bar rating-bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar w-60"></span>
+        </div>
+      </template>
+      <template v-else-if="lead">
         <img class="backdrop" :src="hiRes(lead.backdrop) || lead.poster" alt="" />
         <div class="lead-info">
           <h2>{{ lead.title }}</h2>
@@ -77,7 +91,13 @@
           <span v-if="status === 'ready'" class="count num">{{ countLabel(filteredMovies.length) }}</span>
         </div>
 
-        <table v-if="rest.length">
+        <ul v-if="status === 'loading'" class="skeleton-rows" aria-hidden="true">
+          <li v-for="n in 6" :key="n">
+            <span class="poster-ph"></span>
+            <span class="lines"><span class="bar w-40"></span><span class="bar w-25"></span></span>
+          </li>
+        </ul>
+        <table v-else-if="rest.length">
           <thead>
             <tr>
               <th colspan="2">Film</th>
@@ -135,7 +155,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { getMovies, getCinemas, getUpcomingShowtimes, getComingSoon } from '../services/api.js'
 import { dayKey, dayLabel, minutesOfDay, timeWithFormat } from '@/utils/time'
 import SearchBar from '@/components/SearchBar.vue'
@@ -152,8 +172,14 @@ const selectedDay = ref('') // '' = toute la semaine, sinon "2026-11-01"
 const after = ref(0) // minutes depuis minuit
 const selectedCinema = ref('')
 
+// Le backend gratuit dort quand personne ne l'utilise : après 3 s, on explique l'attente
+const slow = ref(false)
+let slowTimer
 const load = async () => {
   status.value = 'loading'
+  slow.value = false
+  clearTimeout(slowTimer)
+  slowTimer = setTimeout(() => (slow.value = true), 3000)
   try {
     ;[movies.value, cinemas.value, showtimes.value] = await Promise.all([
       getMovies({ showing: true }),
@@ -163,8 +189,11 @@ const load = async () => {
     status.value = 'ready'
   } catch {
     status.value = 'error'
+  } finally {
+    clearTimeout(slowTimer)
   }
 }
+onUnmounted(() => clearTimeout(slowTimer))
 // Prochaines sorties : chargées à part, une panne de TMDB ne doit pas casser l'accueil
 const comingSoon = ref([])
 const loadComingSoon = async () => {
@@ -606,6 +635,75 @@ tr:has(a:focus-visible) {
 
 .name {
   font-weight: 500;
+}
+
+/* chargement : la forme de la page, sans contenu */
+.bar {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--raised);
+}
+
+.bar.heading {
+  width: 70%;
+  height: 24px;
+}
+
+.bar.rating-bar {
+  width: 64px;
+  height: 30px;
+  margin-bottom: 6px;
+}
+
+.bar.w-25 {
+  width: 25%;
+}
+
+.bar.w-40 {
+  width: 40%;
+}
+
+.bar.w-60 {
+  width: 60%;
+}
+
+.backdrop.placeholder {
+  background: var(--raised);
+  opacity: 0.5;
+}
+
+.skeleton-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skeleton-rows li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.poster-ph {
+  flex: none;
+  width: 48px;
+  height: 72px;
+  border-radius: var(--radius-thumb);
+  background: var(--surface);
+}
+
+.skeleton-rows .lines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-rows .bar {
+  background: var(--surface);
 }
 
 /* prochaines sorties : une rangée d'affiches qui défile à l'horizontale */

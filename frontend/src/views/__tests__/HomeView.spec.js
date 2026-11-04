@@ -207,4 +207,25 @@ describe('HomeView', () => {
     expect(w.find('[role=alert]').exists()).toBe(false)
     expect(leadTitle(w)).toBe('Inception')
   })
+
+  it('montre la forme de la page pendant le chargement, puis explique une attente longue', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] })
+    vi.setSystemTime(new Date(at('2026-11-01T15:00:00')))
+    let finish
+    getMovies.mockReturnValue(new Promise((resolve) => (finish = resolve)))
+    const w = await mountHome()
+    expect(w.find('.feature').attributes('aria-busy')).toBe('true')
+    expect(w.find('.skeleton-rows').exists()).toBe(true)
+    expect(w.find('[role=status]').text()).toBe('Chargement des films…')
+
+    vi.advanceTimersByTime(3000)
+    await flushPromises()
+    expect(w.find('[role=status]').text()).toMatch(/serveur se réveille/)
+
+    finish(MOVIES)
+    await flushPromises()
+    expect(w.find('.skeleton-rows').exists()).toBe(false)
+    expect(w.find('.feature').attributes('aria-busy')).toBe('false')
+    expect(leadTitle(w)).toBe('Inception')
+  })
 })
