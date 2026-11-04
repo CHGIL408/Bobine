@@ -2,7 +2,7 @@
 
 Application web de cinéma : films à l'affiche, cinémas de Québec et leurs séances.
 
-- **Frontend** : Vue 3, Vite, Vue Router, Pinia, Bootstrap, Axios
+- **Frontend** : Vue 3, Vite, Vue Router, Pinia, Axios
 - **Backend** : Node.js, Express 5, MongoDB (Mongoose), API TMDB pour les fiches de films, SerpApi pour les horaires
 
 ## Fonctionnalités

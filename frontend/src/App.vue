@@ -1,6 +1,6 @@
 <script setup>
 import Navbar from './components/Navbar.vue';
-import Footer from './components/Footer.vue';
+import SiteFooter from './components/SiteFooter.vue';
 
 </script>
 
@@ -9,7 +9,7 @@ import Footer from './components/Footer.vue';
   <div class="content">
     <RouterView />
   </div>
-  <Footer />
+  <SiteFooter />
 </template>
 
 <style scoped>
