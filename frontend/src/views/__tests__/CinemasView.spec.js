@@ -101,6 +101,15 @@ describe('CinemasView', () => {
     vi.unstubAllGlobals()
   })
 
+  it('prévient quand la position est approximative (localisation par IP)', async () => {
+    const getCurrentPosition = vi.fn((ok) => ok({ coords: { latitude: 46.78, longitude: -71.34, accuracy: 5000 } }))
+    vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition } })
+    const w = await mountView()
+    await w.find('.locate button').trigger('click')
+    expect(w.find('.locate [role=status]').text()).toBe('Position approximative (à 5 km près) : l’ordre peut être faux.')
+    vi.unstubAllGlobals()
+  })
+
   it('explique quand la localisation est refusée', async () => {
     const getCurrentPosition = vi.fn((ok, fail) => fail({ code: 1 }))
     vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition } })
