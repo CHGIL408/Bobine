@@ -12,19 +12,26 @@ const router = createRouter({
     {
       path: '/movies/:id',
       name: 'movie-details',
+      meta: { title: 'Film' }, // remplacé par le titre du film une fois chargé
       component: () => import('../views/MovieView.vue'),
     },
     {
       path: '/cinemas',
       name : 'cinemas',
+      meta: { title: 'Cinémas' },
       component: () => import('../views/CinemasView.vue'),
     },
     {
       path: '/admin',
       name: 'admin',
+      meta: { title: 'Administration' },
       component: () => import('../views/AdminView.vue'),
     }
   ],
+})
+
+router.afterEach((to) => {
+  document.title = to.meta.title ? `${to.meta.title} · Bobine` : 'Bobine'
 })
 
 export default router

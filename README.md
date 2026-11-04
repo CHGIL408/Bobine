@@ -13,6 +13,7 @@ Application web de cinéma : films à l'affiche, cinémas de Québec et leurs s�
 - Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire, lien vers la page du cinéma sur cineplex.com et les films encore à l'affiche aujourd'hui (heures et format), ou la prochaine séance ; bouton « Trier par distance » (position demandée au navigateur en haute précision, jamais envoyée au serveur ; avertissement si elle n'est connue qu'à plus de 2 km près, par exemple localisée par l'adresse IP ; coordonnées des cinémas vérifiées sur OpenStreetMap)
 - Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB (fiche en français, résumé anglais si le français manque)
 - Page `/admin` (non liée dans le menu) : saisir la clé `ADMIN_API_KEY` (gardée seulement dans l'onglet), ajouter un film par son identifiant TMDB, supprimer un film et ses séances
+- Titre de l'onglet selon la page (« Cinémas · Bobine », titre du film sur sa fiche)
 - Ajout d'un film à partir de son identifiant TMDB (titre, synopsis, affiche, note… récupérés automatiquement), protégé par clé API
 
 ## Structure

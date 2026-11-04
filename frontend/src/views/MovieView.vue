@@ -177,6 +177,7 @@ const load = async () => {
       getShowtimes(route.params.id),
     ])
     status.value = 'ready'
+    document.title = `${movie.value.title} · Bobine`
     selectedDay.value = days.value[0]?.key ?? ''
   } catch {
     status.value = 'error'

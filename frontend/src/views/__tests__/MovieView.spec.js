@@ -46,6 +46,7 @@ describe('MovieView', () => {
     expect(w.find('h1').text()).toBe('Resident Evil')
     expect(w.find('.meta').text()).toBe('2026 · 1 h 35 · Horreur')
     expect(w.find('.rating').text()).toBe('7,3 /10')
+    expect(document.title).toBe('Resident Evil · Bobine')
   })
 
   it('groupe les séances à venir par jour, puis par cinéma, sans les passées', async () => {
