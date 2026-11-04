@@ -8,6 +8,12 @@ export const dayKey = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ 
 export const time = (iso) =>
   new Date(iso).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', timeZone: TZ })
 
+// Format de salle affiché ; absent ou Standard -> "STD"
+export const formatLabel = (format) => (!format || format === 'Standard' ? 'STD' : format)
+
+// Séance -> "18 h 30 STD" / "18 h 30 DBOX"
+export const timeWithFormat = (s) => `${time(s.datetime)} ${formatLabel(s.format)}`
+
 // ISO -> minutes depuis minuit (16 h 30 -> 990)
 export const minutesOfDay = (iso) => {
   const [h, m] = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
