@@ -14,8 +14,7 @@ const escape = (text = '') =>
 
 export const showtimeIcs = ({ showtime, movie, now = new Date() }) => {
   const start = new Date(showtime.datetime)
-  // durée connue : même fin que « fin vers » sur le site (film + bandes-annonces, arrondi aux 5 min) ;
-  // durée inconnue : le site n'affiche pas de fin, l'agenda réserve 2 h pour avoir un événement utilisable
+  // durée connue : film + bandes-annonces, arrondi aux 5 min ; durée inconnue : 2 h réservées
   const end = endOf(showtime.datetime, movie.duration) ?? new Date(start.getTime() + 120 * 60e3)
   const { cinema } = showtime
   const format = showtime.format && showtime.format !== 'Standard' ? ` (${showtime.format})` : ''

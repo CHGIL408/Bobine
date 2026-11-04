@@ -45,16 +45,10 @@ export const dayLabel = (key, now = new Date()) => {
 // Bandes-annonces et publicités avant le film, chez Cineplex : environ 15 min
 export const TRAILERS_MINUTES = 15
 
-// Heure de fin estimée d'une séance (Date), arrondie aux 5 min suivantes ; null si la durée est inconnue
+// Heure de fin estimée d'une séance (Date, pour l'agenda), arrondie aux 5 min suivantes ; null si la durée est inconnue
 export const endOf = (iso, duration) => {
   if (!duration) return null
   const end = new Date(iso).getTime() + (duration + TRAILERS_MINUTES) * 60e3
   const step = 5 * 60e3
   return new Date(Math.ceil(end / step) * step)
-}
-
-// "fin vers 21 h 45", ou '' si la durée est inconnue
-export const endLabel = (iso, duration) => {
-  const end = endOf(iso, duration)
-  return end ? `fin vers ${time(end)}` : ''
 }

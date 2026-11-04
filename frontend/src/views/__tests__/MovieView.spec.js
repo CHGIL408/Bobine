@@ -30,7 +30,7 @@ const mountView = async () => {
   return w
 }
 const cinemaRows = (w) =>
-  w.findAll('.cinemas > li').map((li) => [li.find('.name').text(), li.findAll('.times .when').map((t) => t.text())])
+  w.findAll('.cinemas > li').map((li) => [li.find('.name').text(), li.findAll('.times li').map((t) => t.text())])
 
 describe('MovieView', () => {
   beforeEach(() => {
@@ -149,13 +149,12 @@ describe('MovieView', () => {
     const link = w.find('.times a')
     expect(link.attributes('download')).toBe('resident-evil-2026-11-01-16-h-30.ics')
     expect(link.attributes('aria-label')).toBe(
-      'Ajouter la séance de 16 h 30 en IMAX au Cinéma Cineplex IMAX aux Galeries de la Capitale, fin vers 18 h 20, à mon agenda',
+      'Ajouter la séance de 16 h 30 en IMAX au Cinéma Cineplex IMAX aux Galeries de la Capitale à mon agenda',
     )
     const ics = decodeURIComponent(link.attributes('href').replace('data:text/calendar;charset=utf-8,', ''))
     expect(ics).toContain('SUMMARY:Resident Evil (IMAX)')
     expect(ics).toContain('DTSTART:20261101T213000Z')
-    expect(ics).toContain('DTEND:20261101T232000Z') // même fin que « fin vers 18 h 20 »
-    expect(link.find('.end').text()).toBe('fin vers 18 h 20')
+    expect(ics).toContain('DTEND:20261101T232000Z') // film + bandes-annonces
   })
 
   it("indique quand il n'y a aucune séance", async () => {

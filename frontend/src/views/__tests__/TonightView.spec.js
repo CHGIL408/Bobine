@@ -60,14 +60,13 @@ describe('TonightView', () => {
     expect(w.find('.row a').attributes('href')).toBe('/movies/wicker')
   })
 
-  it('indique le cinéma, le format, la fin estimée et les séances déjà commencées', async () => {
+  it('indique le cinéma, le format et les séances déjà commencées', async () => {
     const w = await mountTonight()
     const rows = w.findAll('.row')
-    expect(rows[0].find('.sub').text().replace(/\s+/g, ' ')).toBe('Odeon Ste-Foy · STD · fin vers 20 h 50')
+    expect(rows[0].find('.sub').text().replace(/\s+/g, ' ')).toBe('Odeon Ste-Foy · STD')
     expect(rows[0].find('.started').text()).toBe('A commencé il y a 10 min')
-    expect(rows[1].find('.sub').text().replace(/\s+/g, ' ')).toBe('Odeon Beauport · IMAX · fin vers 22 h 10')
+    expect(rows[1].find('.sub').text().replace(/\s+/g, ' ')).toBe('Odeon Beauport · IMAX')
     expect(rows[1].find('.started').exists()).toBe(false)
-    // durée inconnue : pas d'heure de fin inventée
     expect(rows[2].find('.sub').text().replace(/\s+/g, ' ')).toBe('Odeon Beauport · STD')
   })
 
@@ -87,7 +86,7 @@ describe('TonightView', () => {
   it('montre les premières séances de demain quand il ne reste rien ce soir', async () => {
     vi.setSystemTime(new Date(at('2026-11-01T23:30:00')))
     const w = await mountTonight()
-    expect(w.find('.subline').text()).toBe('Aucune séance d’ici minuit')
+    expect(w.find('.subline').exists()).toBe(false) // le message ci-dessous suffit
     expect(w.find('.message').text()).toContain('Plus de séances ce soir')
     expect(w.find('.block-title').text()).toBe('Demain')
     expect(titles(w)).toEqual(['Dune'])

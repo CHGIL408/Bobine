@@ -114,10 +114,9 @@
                   <a
                     :href="icsHref(showtimeIcs({ showtime: s, movie }))"
                     :download="fileName(s)"
-                    :aria-label="`Ajouter la séance de ${time(s.datetime)} en ${formatLabel(s.format) === 'STD' ? 'format standard' : s.format} au ${group.cinema.name}${s.end ? `, ${s.end}` : ''}, à mon agenda`"
+                    :aria-label="`Ajouter la séance de ${time(s.datetime)} en ${formatLabel(s.format) === 'STD' ? 'format standard' : s.format} au ${group.cinema.name} à mon agenda`"
                   >
-                    <span class="when">{{ time(s.datetime) }}<span class="format">{{ formatLabel(s.format) }}</span></span>
-                    <span v-if="s.end" class="end">{{ s.end }}</span>
+                    {{ time(s.datetime) }}<span class="format">{{ formatLabel(s.format) }}</span>
                   </a>
                 </li>
               </ul>
@@ -139,7 +138,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getMovie, getShowtimes } from '@/services/api'
 import { useFavoritesStore } from '@/stores/favorites'
 import { showtimeIcs, icsHref } from '@/utils/ics'
-import { dayKey, dayLabel, endLabel, formatLabel, time } from '@/utils/time'
+import { dayKey, dayLabel, formatLabel, time } from '@/utils/time'
 
 
 const route = useRoute()
@@ -215,7 +214,7 @@ const days = computed(() => {
     if (!byDay.has(key)) byDay.set(key, new Map())
     const cinemas = byDay.get(key)
     if (!cinemas.has(s.cinema._id)) cinemas.set(s.cinema._id, { cinema: s.cinema, showtimes: [] })
-    cinemas.get(s.cinema._id).showtimes.push({ ...s, end: endLabel(s.datetime, movie.value.duration) })
+    cinemas.get(s.cinema._id).showtimes.push(s)
   }
   return [...byDay].map(([key, cinemas]) => ({
     key,
@@ -414,28 +413,16 @@ ul {
 
 .times a {
   display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: var(--control-height);
-  padding: 6px 14px;
+  gap: 6px;
+  height: var(--control-height);
+  padding: 0 14px;
+  align-items: center;
   background: var(--surface);
   border-radius: 999px;
   color: var(--text);
   font-weight: 500;
   text-decoration: none;
   transition: background 0.15s, transform 0.1s;
-}
-
-.when {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.end {
-  color: var(--faint);
-  font-size: 11px;
-  font-weight: 400;
 }
 
 .times a:hover {

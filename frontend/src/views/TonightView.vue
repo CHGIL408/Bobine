@@ -2,7 +2,7 @@
   <main class="page">
     <div class="title-row">
       <h1>Ce soir</h1>
-      <p v-if="status === 'ready'" class="subline">{{ summary }}</p>
+      <p v-if="status === 'ready' && tonight.length" class="subline">{{ summary }}</p>
       <p v-else-if="status === 'loading'" class="subline" role="status">
         {{ slow ? SLOW_MESSAGE : 'Chargement des séances…' }}
       </p>
@@ -52,13 +52,10 @@
               <span v-else class="poster" aria-hidden="true"></span>
               <span class="identity">
                 <RouterLink :to="`/movies/${row.movie._id}`">{{ row.movie.title }}</RouterLink>
-                <!-- chaque morceau reste entier : la ligne se coupe entre eux, jamais au milieu d'une heure -->
+                <!-- chaque morceau reste entier : la ligne se coupe entre le cinéma et le format -->
                 <span class="sub num">
                   <span class="piece">{{ row.cinema }}</span> ·
-                  <span class="piece format">{{ formatLabel(row.showtime.format) }}</span
-                  ><template v-if="row.end">
-                    · <span class="piece">{{ row.end }}</span></template
-                  >
+                  <span class="piece format">{{ formatLabel(row.showtime.format) }}</span>
                 </span>
                 <span v-if="row.started" class="started">{{ row.started }}</span>
               </span>
@@ -76,7 +73,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { idOf, shortCinemaName as shortName } from '@/utils/cinemas'
 import { SLOW_MESSAGE, useSlowLoading } from '@/utils/slowLoading'
 import { getCinemas, getMovies, getUpcomingShowtimes } from '@/services/api'
-import { dayKey, endLabel, formatLabel, minutesOfDay, nextDayKey, time, TRAILERS_MINUTES } from '@/utils/time'
+import { dayKey, formatLabel, minutesOfDay, nextDayKey, time, TRAILERS_MINUTES } from '@/utils/time'
 
 const status = ref('loading')
 const showtimes = ref([])
@@ -126,7 +123,6 @@ const toRow = (s) => {
     showtime: s,
     movie,
     cinema: shortName(cinemaById.value.get(idOf(s.cinema))?.name ?? ''),
-    end: endLabel(s.datetime, movie.duration),
     started: startedLabel(s.datetime),
   }
 }
@@ -182,8 +178,7 @@ const blocks = computed(() =>
 )
 
 const summary = computed(() => {
-  const n = tonight.value.length
-  if (!n) return 'Aucune séance d’ici minuit'
+  const n = tonight.value.length // affiché seulement s'il reste des séances ce soir
   return `${n} séance${n > 1 ? 's' : ''} d’ici minuit`
 })
 </script>

@@ -55,7 +55,7 @@ const worstShowtimes = (now) => {
     showtime('w7', 'm6', 'c1', min(66), '3D'),
     showtime('w8', 'm1', 'c3', min(67), 'VF'),
     showtime('w9', 'gone', 'c1', min(70)), // film supprimé de la base
-    showtime('w10', 'm2', 'c2', beforeMidnight(1), 'IMAX'), // 23 h 59 : fin vers 4 h du matin
+    showtime('w10', 'm2', 'c2', beforeMidnight(1), 'IMAX'), // 23 h 59 : séance juste avant minuit
     showtime('w11', 'm6', 'c1', midnight), // minuit pile : c'est demain
     showtime('w12', 'm6', 'c2', new Date(midnight.getTime() + 13 * 3600e3)),
   ]
