@@ -40,21 +40,21 @@ const cinemas = [
     address: '825 Rue Clemenceau',
     city: 'Québec',
     location: { type: 'Point', coordinates: [-71.2087, 46.8699] },
-    website: 'https://www.cineplex.com',
+    website: 'https://www.cineplex.com/fr/theatre/cinema-cineplex-odeon-beauport',
   },
   {
     name: 'Cinéma Cineplex IMAX aux Galeries de la Capitale',
     address: '5401 Boul. des Galeries',
     city: 'Québec',
     location: { type: 'Point', coordinates: [-71.2875, 46.8335] },
-    website: 'https://www.cineplex.com',
+    website: 'https://www.cineplex.com/fr/theatre/cinema-cineplex-imax-aux-galeries-de-la-capitale',
   },
   {
     name: 'Cinéma Cineplex Odeon Ste-Foy',
     address: '1200 Autoroute Duplessis',
     city: 'Québec',
     location: { type: 'Point', coordinates: [-71.3523, 46.7864] },
-    website: 'https://www.cineplex.com',
+    website: 'https://www.cineplex.com/fr/theatre/cinema-cineplex-odeon-saintefoy',
   },
 ];
 
