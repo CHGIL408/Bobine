@@ -53,7 +53,7 @@ describe('MovieView', () => {
     expect(w.findAll('[role=tab]').map((t) => t.text())).toEqual(["Aujourd'hui", 'mar. 3 nov.'])
     expect(cinemaRows(w)).toEqual([
       ['Cinéma Cineplex IMAX aux Galeries de la Capitale', ['16 h 30IMAX']],
-      ['Cinéma Cineplex Odeon Beauport', ['16 h 30', '19 h 30']],
+      ['Cinéma Cineplex Odeon Beauport', ['16 h 30STD', '19 h 30STD']],
     ])
     expect(w.text()).toContain('4 séances à venir dans 2 cinémas')
   })

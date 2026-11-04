@@ -62,9 +62,9 @@ describe('CinemasView', () => {
     const w = await mountView()
     const beauport = cards(w)[0]
     expect(films(beauport).slice(0, 3)).toEqual([
-      ['Film 1', '16 h 00 · 21 h 00 3D'],
-      ['Film 2', '18 h 30'],
-      ['Film 3', '22 h 03'],
+      ['Film 1', '16 h 00 STD · 21 h 00 3D'],
+      ['Film 2', '18 h 30 STD'],
+      ['Film 3', '22 h 03 STD'],
     ])
     expect(films(beauport)).toHaveLength(6) // m0 (séance passée) et la séance de demain sont exclus
     expect(beauport.find('.films a').attributes('href')).toBe('/movies/m1')

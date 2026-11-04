@@ -86,10 +86,10 @@ describe('HomeView', () => {
   it('indique la prochaine séance du film en vedette et les prochaines heures de chaque film', async () => {
     const w = await mountHome()
     expect(w.find('.next').text().replace(/\s+/g, ' ')).toBe(
-      "Prochaine séance : Aujourd'hui 19 h 30 · Odeon Beauport",
+      "Prochaine séance : Aujourd'hui 19 h 30 STD · Odeon Beauport",
     )
     const times = w.findAll('tbody td.times').map((td) => td.text())
-    expect(times).toEqual(["Aujourd'hui 16 h 30, 21 h 35 DBOX", 'Demain 18 h 00']) // la séance de 13 h est passée
+    expect(times).toEqual(["Aujourd'hui 16 h 30 STD, 21 h 35 DBOX", 'Demain 18 h 00 STD']) // la séance de 13 h est passée
   })
 
   it("propose les jours qui ont des séances et l'ensemble des cinémas", async () => {
@@ -103,7 +103,7 @@ describe('HomeView', () => {
     const w = await mountHome()
     await choose(w, 'Jour', '2026-11-02')
     expect(leadTitle(w)).toBe('Inception')
-    expect(w.find('.next').text()).toContain('Demain 16 h 00 · Odeon Ste-Foy')
+    expect(w.find('.next').text()).toContain('Demain 16 h 00 STD · Odeon Ste-Foy')
     expect(rowTitles(w)).toEqual(['Oppenheimer'])
     expect(count(w)).toBe('2 films')
   })
@@ -119,7 +119,7 @@ describe('HomeView', () => {
     const w = await mountHome()
     await choose(w, 'Cinéma', 'c1')
     expect(count(w)).toBe('3 films')
-    expect(w.findAll('tbody td.times').map((td) => td.text())).toEqual(['mar. 3 nov. 20 h 00', 'Demain 18 h 00'])
+    expect(w.findAll('tbody td.times').map((td) => td.text())).toEqual(['mar. 3 nov. 20 h 00 STD', 'Demain 18 h 00 STD'])
   })
 
   it('affiche un message sans résultat, puis réinitialise jour, heure et cinéma', async () => {
@@ -140,7 +140,7 @@ describe('HomeView', () => {
     await search(w, 'DUNE')
     expect(leadTitle(w)).toBe('Dune : Deuxième partie')
     await choose(w, 'Cinéma', 'c1')
-    expect(w.find('.next').text()).toContain('mar. 3 nov. 20 h 00 · Odeon Beauport')
+    expect(w.find('.next').text()).toContain('mar. 3 nov. 20 h 00 STD · Odeon Beauport')
     await clickTab(w, 'Tous')
     expect(count(w)).toBe('1 film') // la recherche « dune » est conservée
   })

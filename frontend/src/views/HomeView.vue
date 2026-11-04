@@ -123,7 +123,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { getMovies, getCinemas, getUpcomingShowtimes } from '../services/api.js'
-import { dayKey, dayLabel, minutesOfDay, time } from '@/utils/time'
+import { dayKey, dayLabel, minutesOfDay, timeWithFormat } from '@/utils/time'
 import SearchBar from '@/components/SearchBar.vue'
 import { useFavoritesStore } from '@/stores/favorites'
 
@@ -213,10 +213,6 @@ const nextOf = (movie) => {
   if (!s) return null
   return { when: `${dayLabel(dayKey(new Date(s.datetime)))} ${timeWithFormat(s)}`, where: cinemaName(idOf(s.cinema)) }
 }
-
-// "18 h 30" ou "18 h 30 DBOX" (le format n'est indiqué que s'il n'est pas Standard)
-const timeWithFormat = (s) =>
-  s.format && s.format !== 'Standard' ? `${time(s.datetime)} ${s.format}` : time(s.datetime)
 
 // "Aujourd'hui 16 h 30, 19 h 30 IMAX, 21 h 35" : les 3 premières heures du premier jour qui correspond
 const nextTimes = (movie) => {

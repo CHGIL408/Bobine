@@ -79,7 +79,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { getCinemas, getMovies, getUpcomingShowtimes } from '@/services/api'
-import { dayKey, dayLabel, time } from '@/utils/time'
+import { dayKey, dayLabel, time, timeWithFormat } from '@/utils/time'
 import { cinemaPoint, distanceKm, formatDistance } from '@/utils/geo'
 
 const LIMIT = 6 // films affichés par cinéma avant « Afficher les N autres »
@@ -135,7 +135,7 @@ const todayAt = (cinema) => {
   for (const s of upcomingByCinema.value.get(cinema._id) ?? []) {
     if (dayKey(new Date(s.datetime)) !== today) continue
     if (!rows.has(s.movie._id)) rows.set(s.movie._id, { movie: s.movie, times: [] })
-    const label = s.format && s.format !== 'Standard' ? `${time(s.datetime)} ${s.format}` : time(s.datetime)
+    const label = timeWithFormat(s)
     const times = rows.get(s.movie._id).times
     if (!times.includes(label)) times.push(label) // deux salles à la même heure : une seule mention
   }
@@ -175,7 +175,11 @@ const locate = () => {
     ({ coords }) => {
       position.value = { lat: coords.latitude, lng: coords.longitude }
       locating.value = false
-      locateMessage.value = 'Du plus proche au plus loin, à vol d’oiseau.'
+      // sans GPS (ordinateur), le navigateur peut se fier à l'adresse IP : position à plusieurs km près
+      locateMessage.value =
+        coords.accuracy > 2000
+          ? `Position approximative (à ${formatDistance(coords.accuracy / 1000)} près) : l’ordre peut être faux.`
+          : 'Du plus proche au plus loin, à vol d’oiseau.'
     },
     (err) => {
       locating.value = false
@@ -184,7 +188,7 @@ const locate = () => {
           ? 'Localisation refusée. Autorisez-la dans votre navigateur pour trier par distance.'
           : 'Impossible de vous localiser pour le moment.'
     },
-    { timeout: 10000, maximumAge: 600000 },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
   )
 }
 

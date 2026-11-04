@@ -115,9 +115,9 @@
                   <a
                     :href="icsHref(showtimeIcs({ showtime: s, movie }))"
                     :download="fileName(s)"
-                    :aria-label="`Ajouter la séance de ${time(s.datetime)}${s.format !== 'Standard' ? ` en ${s.format}` : ''} au ${group.cinema.name} à mon agenda`"
+                    :aria-label="`Ajouter la séance de ${time(s.datetime)} en ${formatLabel(s.format) === 'STD' ? 'format standard' : s.format} au ${group.cinema.name} à mon agenda`"
                   >
-                    {{ time(s.datetime) }}<span v-if="s.format !== 'Standard'" class="format">{{ s.format }}</span>
+                    {{ time(s.datetime) }}<span class="format">{{ formatLabel(s.format) }}</span>
                   </a>
                 </li>
               </ul>
@@ -138,7 +138,7 @@ import { useRoute } from 'vue-router'
 import { getMovie, getShowtimes } from '@/services/api'
 import { useFavoritesStore } from '@/stores/favorites'
 import { showtimeIcs, icsHref } from '@/utils/ics'
-import { dayKey, dayLabel, time } from '@/utils/time'
+import { dayKey, dayLabel, formatLabel, time } from '@/utils/time'
 
 
 const route = useRoute()
