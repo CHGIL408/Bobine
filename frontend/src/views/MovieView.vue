@@ -1,6 +1,6 @@
 <template>
   <main class="page">
-    <RouterLink to="/" class="back">← Films</RouterLink>
+    <a href="/" class="back" @click.prevent="backToList">← Films</a>
 
     <p v-if="status === 'error'" class="panel message" role="alert">
       Impossible de charger ce film.
@@ -81,13 +81,12 @@
         </div>
 
         <template v-if="days.length">
-          <div class="tabs" role="tablist" aria-label="Jours">
+          <div class="tabs" role="group" aria-label="Jours">
             <button
               v-for="day in days"
               :key="day.key"
               type="button"
-              role="tab"
-              :aria-selected="day.key === selectedDay"
+              :aria-pressed="day.key === selectedDay"
               @click="selectedDay = day.key"
             >
               {{ day.label }}
@@ -134,7 +133,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getMovie, getShowtimes } from '@/services/api'
 import { useFavoritesStore } from '@/stores/favorites'
 import { showtimeIcs, icsHref } from '@/utils/ics'
@@ -142,6 +141,14 @@ import { dayKey, dayLabel, formatLabel, time } from '@/utils/time'
 
 
 const route = useRoute()
+const router = useRouter()
+
+// Venu de l'accueil : on y revient par l'historique, pour retrouver la position dans la liste.
+// Arrivé directement (lien partagé) : le lien mène simplement à l'accueil.
+const backToList = () => {
+  if (window.history.state?.back === '/') router.back()
+  else router.push('/')
+}
 const favorites = useFavoritesStore()
 const movie = ref({})
 const showtimes = ref([])
@@ -356,11 +363,11 @@ p {
 }
 
 .tabs button:hover,
-.tabs button[aria-selected='true'] {
+.tabs button[aria-pressed='true'] {
   color: var(--text);
 }
 
-.tabs button[aria-selected='true'] {
+.tabs button[aria-pressed='true'] {
   border-bottom-color: var(--text);
 }
 

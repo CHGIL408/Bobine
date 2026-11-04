@@ -73,13 +73,12 @@
     <div class="columns">
       <section class="catalogue" aria-labelledby="catalogue-title">
         <h2 id="catalogue-title" class="visually-hidden">Tous les films</h2>
-        <div class="tabs" role="tablist" aria-label="Genres">
+        <div class="tabs" role="group" aria-label="Genres">
           <button
             v-for="genre in genres"
             :key="genre"
             type="button"
-            role="tab"
-            :aria-selected="selectedGenre === genre"
+            :aria-pressed="selectedGenre === genre"
             @click="selectedGenre = genre"
           >
             {{ genre }}
@@ -123,12 +122,15 @@
         <p v-else-if="status === 'ready' && lead" class="empty">Aucun autre film dans cette sélection.</p>
       </section>
 
-      <aside class="cinemas" aria-labelledby="cinemas-title">
+      <aside v-if="status !== 'error'" class="cinemas" aria-labelledby="cinemas-title">
         <div class="panel-head">
           <h2 id="cinemas-title">Cinémas</h2>
           <RouterLink to="/cinemas" class="text-action">Tout voir</RouterLink>
         </div>
-        <ul>
+        <ul v-if="status === 'loading'" class="cinema-placeholders" aria-hidden="true">
+          <li v-for="n in 3" :key="n"><span class="bar w-60"></span><span class="bar w-80"></span></li>
+        </ul>
+        <ul v-else>
           <li v-for="cinema in cinemas.slice(0, 4)" :key="cinema._id">
             <span class="name">{{ cinema.name }}</span>
             <span class="sub">{{ cinema.address }}, {{ cinema.city }}</span>
@@ -146,6 +148,7 @@
             <img v-if="movie.poster" :src="movie.poster" alt="" loading="lazy" />
             <span v-else class="no-poster" aria-hidden="true"></span>
             <span class="title">{{ movie.title }}</span>
+            <span class="visually-hidden"> (fiche TMDB, nouvel onglet)</span>
           </a>
           <span class="sub">Sortie le {{ releaseDay(movie.releaseDate) }}</span>
         </li>
@@ -493,11 +496,11 @@ td.times.num {
 }
 
 .tabs button:hover,
-.tabs button[aria-selected='true'] {
+.tabs button[aria-pressed='true'] {
   color: var(--text);
 }
 
-.tabs button[aria-selected='true'] {
+.tabs button[aria-pressed='true'] {
   border-bottom-color: var(--text);
 }
 
@@ -666,6 +669,16 @@ tr:has(a:focus-visible) {
 
 .bar.w-60 {
   width: 60%;
+}
+
+.bar.w-80 {
+  width: 80%;
+}
+
+.cinema-placeholders li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .backdrop.placeholder {

@@ -3,6 +3,8 @@ import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  // retour arrière : on retrouve l'endroit où on était ; nouvelle page : on part du haut
+  scrollBehavior: (to, from, savedPosition) => savedPosition ?? { top: 0 },
   routes: [
     {
       path: '/',

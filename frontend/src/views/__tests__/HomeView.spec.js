@@ -45,7 +45,7 @@ const mountHome = async () => {
 const rowTitles = (w) => w.findAll('tbody .identity a').map((a) => a.text())
 const leadTitle = (w) => w.find('.feature h2').text()
 const count = (w) => w.find('.count').text()
-const clickTab = (w, name) => w.findAll('[role=tab]').find((b) => b.text() === name).trigger('click')
+const clickTab = (w, name) => w.findAll('.tabs button').find((b) => b.text() === name).trigger('click')
 const search = (w, text) => w.find('input[type=search]').setValue(text)
 const choose = (w, label, value) => w.find(`select[aria-label="${label}"]`).setValue(value)
 
@@ -149,7 +149,7 @@ describe('HomeView', () => {
 
   it("montre toujours l'onglet Favoris et explique comment en ajouter", async () => {
     const w = await mountHome()
-    expect(w.findAll('[role=tab]').map((t) => t.text()).slice(0, 2)).toEqual(['Tous', 'Favoris'])
+    expect(w.findAll('.tabs button').map((t) => t.text()).slice(0, 2)).toEqual(['Tous', 'Favoris'])
     await clickTab(w, 'Favoris')
     expect(count(w)).toBe('0 film')
     expect(w.text()).toContain("Aucun favori pour l'instant")

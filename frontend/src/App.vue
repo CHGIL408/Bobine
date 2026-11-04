@@ -7,7 +7,12 @@ import SiteFooter from './components/SiteFooter.vue';
 <template>
   <Navbar />
   <div class="content">
-    <RouterView />
+    <!-- l'accueil reste en mémoire : filtres, genre et recherche sont gardés au retour d'une fiche -->
+    <RouterView v-slot="{ Component }">
+      <KeepAlive include="HomeView">
+        <component :is="Component" />
+      </KeepAlive>
+    </RouterView>
   </div>
   <SiteFooter />
 </template>

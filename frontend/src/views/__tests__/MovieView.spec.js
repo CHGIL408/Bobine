@@ -5,7 +5,8 @@ import MovieView from '../MovieView.vue'
 import { getMovie, getShowtimes } from '@/services/api'
 
 vi.mock('@/services/api', () => ({ getMovie: vi.fn(), getShowtimes: vi.fn() }))
-vi.mock('vue-router', () => ({ useRoute: () => ({ params: { id: 're' } }) }))
+const router = { back: vi.fn(), push: vi.fn() }
+vi.mock('vue-router', () => ({ useRoute: () => ({ params: { id: 're' } }), useRouter: () => router }))
 
 const BEAUPORT = { _id: 'b', name: 'Cinéma Cineplex Odeon Beauport', address: '825 Rue Clemenceau', city: 'Québec' }
 const IMAX = { _id: 'i', name: 'Cinéma Cineplex IMAX aux Galeries de la Capitale', address: '5401 Boul. des Galeries', city: 'Québec', website: 'https://www.cineplex.com' }
@@ -51,7 +52,7 @@ describe('MovieView', () => {
 
   it('groupe les séances à venir par jour, puis par cinéma, sans les passées', async () => {
     const w = await mountView()
-    expect(w.findAll('[role=tab]').map((t) => t.text())).toEqual(["Aujourd'hui", 'mar. 3 nov.'])
+    expect(w.findAll('.tabs button').map((t) => t.text())).toEqual(["Aujourd'hui", 'mar. 3 nov.'])
     expect(cinemaRows(w)).toEqual([
       ['Cinéma Cineplex IMAX aux Galeries de la Capitale', ['16 h 30IMAX']],
       ['Cinéma Cineplex Odeon Beauport', ['16 h 30STD', '19 h 30STD']],
@@ -69,7 +70,7 @@ describe('MovieView', () => {
 
   it('change de jour', async () => {
     const w = await mountView()
-    await w.findAll('[role=tab]')[1].trigger('click')
+    await w.findAll('.tabs button')[1].trigger('click')
     expect(cinemaRows(w)).toEqual([['Cinéma Cineplex IMAX aux Galeries de la Capitale', ['21 h 00IMAX']]])
   })
 
@@ -168,5 +169,19 @@ describe('MovieView', () => {
     await w.find('[role=alert] button').trigger('click')
     await flushPromises()
     expect(w.find('h1').text()).toBe('Resident Evil')
+  })
+
+  it("« ← Films » revient en arrière depuis l'accueil, sinon ouvre l'accueil", async () => {
+    const w = await mountView()
+    router.back.mockReset()
+    router.push.mockReset()
+
+    window.history.replaceState({ back: '/' }, '')
+    await w.find('a.back').trigger('click')
+    expect(router.back).toHaveBeenCalledOnce()
+
+    window.history.replaceState({ back: null }, '')
+    await w.find('a.back').trigger('click')
+    expect(router.push).toHaveBeenCalledWith('/')
   })
 })
