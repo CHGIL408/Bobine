@@ -1,11 +1,11 @@
 <script setup>
-import Navbar from './components/Navbar.vue';
+import SiteHeader from './components/SiteHeader.vue';
 import SiteFooter from './components/SiteFooter.vue';
 
 </script>
 
 <template>
-  <Navbar />
+  <SiteHeader />
   <div class="content">
     <!-- l'accueil reste en mémoire : filtres, genre et recherche sont gardés au retour d'une fiche -->
     <RouterView v-slot="{ Component }">

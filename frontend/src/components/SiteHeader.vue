@@ -3,7 +3,7 @@
     <RouterLink to="/" class="brand">
       <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="11" fill="currentColor" />
-        <g fill="#000">
+        <g class="holes">
           <circle cx="12" cy="12" r="2" />
           <circle cx="12" cy="5.5" r="2.6" />
           <circle cx="18.2" cy="10" r="2.6" />
@@ -49,13 +49,17 @@
   color: var(--accent);
 }
 
+.holes {
+  fill: var(--ground);
+}
+
 nav {
   display: flex;
   gap: 24px;
 }
 
 nav a {
-  color: #bbbbbb;
+  color: var(--idle);
   font-weight: 500;
   text-decoration: none;
   transition: color 0.15s;

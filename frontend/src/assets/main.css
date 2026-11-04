@@ -10,6 +10,10 @@
   --faint: #949494;
   --accent: #f2b33d; /* marquee amber: the one data hue, on ratings only */
   --negative: #e5566f;
+  --idle: #bbbbbb; /* liens de navigation et onglets non choisis */
+  --divider: #1f1f1f; /* séparateurs à l'intérieur d'un panneau --surface */
+  --on-light: #000000; /* texte sur un bouton blanc ou ambre */
+  --primary-hover: #e6e6e6; /* bouton blanc survolé */
   --radius-card: 20px;
   --radius-thumb: 3px;
   --gap: 14px;
@@ -109,7 +113,7 @@ code {
 
 ::selection {
   background: var(--accent);
-  color: #000;
+  color: var(--on-light);
 }
 
 body {

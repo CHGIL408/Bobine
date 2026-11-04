@@ -271,7 +271,7 @@ a:focus-visible {
   border: 0;
   border-radius: 999px;
   background: var(--text);
-  color: #000;
+  color: var(--on-light);
   font: inherit;
   font-weight: 500;
   cursor: pointer;

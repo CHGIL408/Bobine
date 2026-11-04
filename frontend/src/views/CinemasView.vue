@@ -384,14 +384,14 @@ h3 {
   padding: 0 18px;
   border-radius: 999px;
   background: var(--text);
-  color: #000;
+  color: var(--on-light);
   font-weight: 500;
   text-decoration: none;
   transition: transform 0.1s, background 0.15s;
 }
 
 .primary:hover {
-  background: #e6e6e6;
+  background: var(--primary-hover);
 }
 
 .primary:active {

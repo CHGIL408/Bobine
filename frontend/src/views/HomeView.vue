@@ -447,14 +447,14 @@ td.times.num {
   padding: 0 18px;
   border-radius: 999px;
   background: var(--text);
-  color: #000;
+  color: var(--on-light);
   font-weight: 500;
   text-decoration: none;
   transition: transform 0.1s, background 0.15s;
 }
 
 .primary:hover {
-  background: #e6e6e6;
+  background: var(--primary-hover);
 }
 
 .primary:active {
@@ -489,7 +489,7 @@ td.times.num {
   border: 0;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  color: #bbbbbb;
+  color: var(--idle);
   font: inherit;
   font-weight: 500;
   cursor: pointer;
@@ -629,7 +629,7 @@ tr:has(a:focus-visible) {
 
 .cinemas li {
   padding: 12px 0;
-  border-top: 1px solid #1f1f1f;
+  border-top: 1px solid var(--divider);
 }
 
 .cinemas li:first-child {

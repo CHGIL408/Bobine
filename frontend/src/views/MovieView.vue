@@ -356,7 +356,7 @@ p {
   border: 0;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  color: #bbbbbb;
+  color: var(--idle);
   font: inherit;
   font-weight: 500;
   cursor: pointer;
@@ -458,7 +458,7 @@ ul {
   border: 0;
   border-radius: 999px;
   background: var(--text);
-  color: #000;
+  color: var(--on-light);
   font: inherit;
   font-weight: 500;
   cursor: pointer;
@@ -531,7 +531,7 @@ ul {
 }
 
 .primary:hover {
-  background: #e6e6e6;
+  background: var(--primary-hover);
 }
 
 .primary:active {
