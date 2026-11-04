@@ -29,6 +29,12 @@ body {
   font-size: var(--fs-body);
 }
 
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 /* Bootstrap fixe une couleur foncée sur les titres ; ils suivent le texte de la page */
 h1,
 h2,
