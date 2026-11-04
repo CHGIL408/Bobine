@@ -46,7 +46,7 @@ const cinemas = [
     name: 'Cinéma Cineplex IMAX aux Galeries de la Capitale',
     address: '5401 Boul. des Galeries',
     city: 'Québec',
-    location: { type: 'Point', coordinates: [-71.2875, 46.8335] },
+    location: { type: 'Point', coordinates: [-71.3, 46.8288] },
     website: 'https://www.cineplex.com/fr/theatre/cinema-cineplex-imax-aux-galeries-de-la-capitale',
   },
   {
