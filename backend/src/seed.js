@@ -34,12 +34,12 @@ const movies = [
 ];
 
 const cinemas = [
-  // coordonnées approximatives (centre commercial), à préciser si on fait de la recherche par distance
+  // coordonnées vérifiées sur OpenStreetMap (utilisées pour trier les cinémas par distance)
   {
     name: 'Cinéma Cineplex Odeon Beauport',
     address: '825 Rue Clemenceau',
     city: 'Québec',
-    location: { type: 'Point', coordinates: [-71.2056, 46.8601] },
+    location: { type: 'Point', coordinates: [-71.2087, 46.8699] },
     website: 'https://www.cineplex.com',
   },
   {
