@@ -69,4 +69,33 @@ const searchMovieId = async (title, now = new Date()) => {
   return (recent ?? results[0])?.id ?? null;
 };
 
-module.exports = { getMovieById, searchMovieId };
+// Date du jour à Québec, "2026-11-04" (même format que release_date)
+const todayInQuebec = (now) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto' }).format(now);
+
+// Prochaines sorties au Canada : les plus attendues (popularité TMDB), de la plus proche à la plus lointaine.
+// /movie/upcoming renvoie aussi des films sortis il y a quelques jours : on ne garde que ceux pas encore sortis.
+// Trier par date seulement remplirait la liste de petits films qui ne passeront pas chez Cineplex.
+const getUpcomingMovies = async (now = new Date(), limit = 12) => {
+  const pages = await Promise.all(
+    [1, 2].map((page) =>
+      tmdbApi.get('/movie/upcoming', { params: { language: 'fr-FR', region: 'CA', page } }),
+    ),
+  );
+  const today = todayInQuebec(now);
+  const seen = new Set();
+  return pages
+    .flatMap((p) => p.data.results)
+    .filter((m) => m.release_date > today && !seen.has(m.id) && seen.add(m.id))
+    .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+    .slice(0, limit)
+    .sort((a, b) => a.release_date.localeCompare(b.release_date))
+    .map((m) => ({
+      tmdbId: m.id,
+      title: m.title,
+      releaseDate: m.release_date,
+      poster: m.poster_path ? `${TMDB_IMAGE_URL}${m.poster_path}` : null,
+    }));
+};
+
+module.exports = { getMovieById, searchMovieId, getUpcomingMovies };

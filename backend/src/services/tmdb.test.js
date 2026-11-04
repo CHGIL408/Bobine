@@ -14,7 +14,7 @@ axios.create = () => ({
     return { data: data?.[config?.params?.language] ?? data };
   },
 });
-const { getMovieById, searchMovieId } = require('./tmdb');
+const { getMovieById, searchMovieId, getUpcomingMovies } = require('./tmdb');
 
 test('getMovieById transforme la réponse TMDB en film Bobine', async () => {
   responses['/movie/27205'] = {
@@ -103,4 +103,37 @@ test("getMovieById prend le résumé anglais quand le français est vide", async
   assert.strictEqual(movie.title, 'Vous voyez tout');
   assert.strictEqual(movie.synopsis, 'A documentary about seeing everything.');
   assert.strictEqual(requests.at(-1).config.params.language, 'en-US');
+});
+
+test('getUpcomingMovies garde les films pas encore sortis à Québec, triés par date, sans doublon', async () => {
+  // 4 nov. 2026, 23 h à Québec = 5 nov. en UTC : "aujourd'hui" doit rester le 4
+  const now = new Date('2026-11-05T04:00:00Z');
+  responses['/movie/upcoming'] = {
+    results: [
+      { id: 1, title: 'Déjà sorti', release_date: '2026-10-30', poster_path: '/a.jpg' },
+      { id: 2, title: 'Sort aujourd’hui', release_date: '2026-11-04', poster_path: null },
+      { id: 3, title: 'Plus tard', release_date: '2026-12-19', poster_path: null },
+      { id: 4, title: 'Demain', release_date: '2026-11-05', poster_path: '/d.jpg' },
+    ],
+  };
+  // les pages 1 et 2 renvoient la même réponse simulée : les doublons doivent disparaître
+  const movies = await getUpcomingMovies(now);
+  assert.deepStrictEqual(movies, [
+    { tmdbId: 4, title: 'Demain', releaseDate: '2026-11-05', poster: 'https://image.tmdb.org/t/p/w500/d.jpg' },
+    { tmdbId: 3, title: 'Plus tard', releaseDate: '2026-12-19', poster: null },
+  ]);
+  assert.deepStrictEqual(requests.at(-1).config.params, { language: 'fr-FR', region: 'CA', page: 2 });
+});
+
+test('getUpcomingMovies garde les plus populaires, puis les trie par date', async () => {
+  const now = new Date('2026-11-04T12:00:00Z');
+  responses['/movie/upcoming'] = {
+    results: [
+      { id: 1, title: 'Petit film', release_date: '2026-11-06', popularity: 2 },
+      { id: 2, title: 'Grosse sortie', release_date: '2026-11-20', popularity: 90 },
+      { id: 3, title: 'Attendu', release_date: '2026-11-13', popularity: 40 },
+    ],
+  };
+  const movies = await getUpcomingMovies(now, 2);
+  assert.deepStrictEqual(movies.map((m) => m.title), ['Attendu', 'Grosse sortie']);
 });

@@ -2,12 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import HomeView from '../HomeView.vue'
-import { getMovies, getCinemas, getUpcomingShowtimes } from '@/services/api.js'
+import { getMovies, getCinemas, getUpcomingShowtimes, getComingSoon } from '@/services/api.js'
 
 vi.mock('@/services/api.js', () => ({
   getMovies: vi.fn(),
   getCinemas: vi.fn(),
   getUpcomingShowtimes: vi.fn(),
+  getComingSoon: vi.fn(),
 }))
 
 const MOVIES = [
@@ -56,6 +57,7 @@ describe('HomeView', () => {
     getMovies.mockReset().mockResolvedValue(MOVIES)
     getCinemas.mockReset().mockResolvedValue(CINEMAS)
     getUpcomingShowtimes.mockReset().mockResolvedValue(SHOWTIMES)
+    getComingSoon.mockReset().mockResolvedValue([])
   })
   afterEach(() => vi.useRealTimers())
 
@@ -179,6 +181,29 @@ describe('HomeView', () => {
     expect(w.find('[role=alert]').text()).toContain('Impossible de charger les films.')
     await w.find('[role=alert] button').trigger('click')
     await flushPromises()
+    expect(w.find('[role=alert]').exists()).toBe(false)
+    expect(leadTitle(w)).toBe('Inception')
+  })
+
+  it('affiche les prochaines sorties, sans les films déjà en salle', async () => {
+    getMovies.mockResolvedValue([{ ...MOVIES[0], tmdbId: 693134 }, MOVIES[1], MOVIES[2]])
+    getComingSoon.mockResolvedValue([
+      { tmdbId: 693134, title: 'Dune : Deuxième partie', releaseDate: '2026-11-06', poster: 'd' },
+      { tmdbId: 42, title: 'Zootopie 2', releaseDate: '2026-11-26', poster: 'z' },
+      { tmdbId: 43, title: 'Sans affiche', releaseDate: '2026-12-01', poster: null },
+    ])
+    const w = await mountHome()
+    const items = w.findAll('.coming-soon li')
+    expect(items.map((li) => li.find('.title').text())).toEqual(['Zootopie 2', 'Sans affiche'])
+    expect(items[0].find('.sub').text()).toBe('Sortie le 26 novembre')
+    expect(items[0].find('a').attributes('href')).toBe('https://www.themoviedb.org/movie/42')
+    expect(items[1].find('.no-poster').exists()).toBe(true)
+  })
+
+  it('cache la section si les prochaines sorties ne chargent pas, sans casser l’accueil', async () => {
+    getComingSoon.mockRejectedValue(new Error('TMDB indisponible'))
+    const w = await mountHome()
+    expect(w.find('.coming-soon').exists()).toBe(false)
     expect(w.find('[role=alert]').exists()).toBe(false)
     expect(leadTitle(w)).toBe('Inception')
   })

@@ -134,3 +134,20 @@ test('POST /movies répond 400 si la sauvegarde échoue (ex. doublon)', async (t
   const res = await post('/movies', { tmdbId: 27205 });
   assert.strictEqual(res.status, 400);
 });
+
+test('GET /movies/upcoming renvoie les prochaines sorties et les garde en cache', async (t) => {
+  movieRoutes.resetUpcomingCache();
+  const upcoming = t.mock.method(tmdb, 'getUpcomingMovies', async () => [{ tmdbId: 9, title: 'Bientôt' }]);
+  const res = await fetch(`${base}/movies/upcoming`);
+  assert.strictEqual(res.status, 200);
+  assert.deepStrictEqual(await res.json(), [{ tmdbId: 9, title: 'Bientôt' }]);
+  await fetch(`${base}/movies/upcoming`);
+  assert.strictEqual(upcoming.mock.callCount(), 1);
+});
+
+test('GET /movies/upcoming répond 502 si TMDB échoue', async (t) => {
+  movieRoutes.resetUpcomingCache();
+  t.mock.method(tmdb, 'getUpcomingMovies', async () => { throw new Error('TMDB indisponible'); });
+  const res = await fetch(`${base}/movies/upcoming`);
+  assert.strictEqual(res.status, 502);
+});

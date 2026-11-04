@@ -39,3 +39,9 @@ export const addMovie = async (tmdbId, apiKey) => {
 export const deleteMovie = async (id, apiKey) => {
   await api.delete(`/movies/${id}`, { headers: { 'x-api-key': apiKey } })
 }
+
+// Prochaines sorties au Canada (TMDB, mises en cache par le serveur) : films pas encore en salle
+export const getComingSoon = async () => {
+  const response = await api.get('/movies/upcoming')
+  return response.data
+}

@@ -8,6 +8,7 @@ Application web de cinéma : films à l'affiche, cinémas de Québec et leurs s�
 ## Fonctionnalités
 
 - Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette avec sa prochaine séance, filtres par jour, heure (dès 17 h, 19 h, 21 h) et cinéma, recherche et filtre par genre, prochaines heures de chaque film avec leur format de salle (« STD » quand il n'est pas précisé), les cinémas
+- « Bientôt à l'affiche » sur l'accueil : les 12 prochaines sorties au Canada les plus attendues selon TMDB, avec affiche et date de sortie (lien vers la fiche TMDB) ; les films qui ont déjà des séances n'y sont pas ; liste gardée 6 h par le serveur pour limiter les appels à TMDB
 - Favoris : un bouton sur la page d'un film, et un onglet « Favoris » toujours présent sur l'accueil ; gardés dans le navigateur (pas de compte)
 - Page d'un film : fiche avec réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec) ; chaque heure s'ajoute à l'agenda (fichier `.ics`) ; lien « Réserver » vers le site du cinéma ; bouton « Partager » (menu du téléphone, sinon copie du lien)
 - Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire, lien vers la page du cinéma sur cineplex.com et les films encore à l'affiche aujourd'hui (heures et format), ou la prochaine séance ; bouton « Trier par distance » (position demandée au navigateur en haute précision, jamais envoyée au serveur ; avertissement si elle n'est connue qu'à plus de 2 km près, par exemple localisée par l'adresse IP ; coordonnées des cinémas vérifiées sur OpenStreetMap)
@@ -81,6 +82,7 @@ curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: ap
 | Méthode | Route                 | Description                             |
 |---------|-----------------------|-----------------------------------------|
 | GET     | `/api/movies`         | Liste des films (`?showing=true` : seulement ceux qui ont une séance à venir) |
+| GET     | `/api/movies/upcoming` | Prochaines sorties au Canada (TMDB, en cache 6 h) |
 | GET     | `/api/movies/:id`     | Détail d'un film                        |
 | POST    | `/api/movies`         | Ajoute un film (`{ "tmdbId": 693134 }`) |
 | DELETE  | `/api/movies/:id`     | Supprime un film et ses séances         |

@@ -2,7 +2,24 @@ const express = require('express');
 const router = express.Router();
 const Movie = require('../models/Movie');
 const Showtime = require('../models/Showtime');
-const { getMovieById } = require('../services/tmdb');
+const tmdb = require('../services/tmdb');
+const { getMovieById } = tmdb;
+
+// PROCHAINES SORTIES (TMDB), gardées 6 h en mémoire : quelques appels TMDB par jour au plus
+const UPCOMING_TTL = 6 * 3600e3;
+let upcomingCache = null; // { at, movies }
+router.get('/upcoming', async (req, res) => {
+  try {
+    if (!upcomingCache || Date.now() - upcomingCache.at > UPCOMING_TTL) {
+      upcomingCache = { at: Date.now(), movies: await tmdb.getUpcomingMovies() };
+    }
+    res.json(upcomingCache.movies);
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
+});
+router.resetUpcomingCache = () => { upcomingCache = null; }; // pour les tests
+
 // GET TOUS LES FILMS (?showing=true : seulement ceux qui ont une séance à venir)
 router.get('/', async (req, res) => {
   try {

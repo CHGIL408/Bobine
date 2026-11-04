@@ -117,12 +117,26 @@
         <p v-if="status === 'ready' && !cinemas.length" class="sub">Aucun cinéma pour le moment.</p>
       </aside>
     </div>
+
+    <section v-if="comingSoonList.length" class="coming-soon" aria-labelledby="coming-soon-title">
+      <h2 id="coming-soon-title">Bientôt à l'affiche</h2>
+      <ul>
+        <li v-for="movie in comingSoonList" :key="movie.tmdbId">
+          <a :href="`https://www.themoviedb.org/movie/${movie.tmdbId}`" target="_blank" rel="noopener">
+            <img v-if="movie.poster" :src="movie.poster" alt="" loading="lazy" />
+            <span v-else class="no-poster" aria-hidden="true"></span>
+            <span class="title">{{ movie.title }}</span>
+          </a>
+          <span class="sub">Sortie le {{ releaseDay(movie.releaseDate) }}</span>
+        </li>
+      </ul>
+    </section>
   </main>
 </template>
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
-import { getMovies, getCinemas, getUpcomingShowtimes } from '../services/api.js'
+import { getMovies, getCinemas, getUpcomingShowtimes, getComingSoon } from '../services/api.js'
 import { dayKey, dayLabel, minutesOfDay, timeWithFormat } from '@/utils/time'
 import SearchBar from '@/components/SearchBar.vue'
 import { useFavoritesStore } from '@/stores/favorites'
@@ -151,7 +165,29 @@ const load = async () => {
     status.value = 'error'
   }
 }
-onMounted(load)
+// Prochaines sorties : chargées à part, une panne de TMDB ne doit pas casser l'accueil
+const comingSoon = ref([])
+const loadComingSoon = async () => {
+  try {
+    comingSoon.value = await getComingSoon()
+  } catch {
+    comingSoon.value = [] // la section reste simplement cachée
+  }
+}
+onMounted(() => {
+  load()
+  loadComingSoon()
+})
+// sans les films qui ont déjà des séances (avant-premières)
+const comingSoonList = computed(() => {
+  const showing = new Set(movies.value.map((m) => m.tmdbId))
+  return comingSoon.value.filter((m) => !showing.has(m.tmdbId))
+})
+// "2026-11-14" -> "14 novembre", lu comme une date locale (pas en UTC)
+const releaseDay = (iso) => {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })
+}
 
 const FAVORITES = 'Favoris' // toujours visible, pour qu'on sache que la fonction existe
 const genres = computed(() => ['Tous', FAVORITES, ...new Set(movies.value.flatMap((m) => m.genre))])
@@ -570,6 +606,64 @@ tr:has(a:focus-visible) {
 
 .name {
   font-weight: 500;
+}
+
+/* prochaines sorties : une rangée d'affiches qui défile à l'horizontale */
+.coming-soon {
+  margin-top: 40px;
+}
+
+.coming-soon ul {
+  display: flex;
+  gap: var(--gap);
+  margin: 14px 0 0;
+  padding: 0 0 8px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.coming-soon li {
+  flex: none;
+  width: 140px;
+  scroll-snap-align: start;
+}
+
+.coming-soon a {
+  display: block;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: var(--radius-thumb);
+}
+
+.coming-soon img,
+.no-poster {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-thumb);
+  background: var(--surface);
+  transition: opacity 0.15s;
+}
+
+.coming-soon a:hover img {
+  opacity: 0.85;
+}
+
+.coming-soon .title {
+  display: -webkit-box;
+  margin-top: 8px;
+  font-weight: 500;
+  line-height: 1.3;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.coming-soon a:hover .title {
+  text-decoration: underline;
 }
 
 .text-action {
