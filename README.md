@@ -64,7 +64,7 @@ Le frontend appelle par défaut l'API déployée (`https://bobine-backend.onrend
 
 ## Séances automatiques
 
-`npm run sync-showtimes` (dans `backend/`) fait une recherche Google par cinéma via [SerpApi](https://serpapi.com), lit les horaires des 7 prochains jours, retrouve chaque film sur TMDB (et le crée s'il n'est pas en base), puis remplace les séances à venir du cinéma. Les séances passées sont gardées ; si Google ne renvoie rien pour un cinéma, ses séances ne sont pas touchées. Les séances dont le film n'existe plus sont supprimées.
+`npm run sync-showtimes` (dans `backend/`) fait une recherche Google par cinéma via [SerpApi](https://serpapi.com), lit les horaires des 7 prochains jours, retrouve chaque film sur TMDB (et le crée s'il n'est pas en base), puis remplace les séances à venir du cinéma (les doublons renvoyés par Google sont retirés). Les séances passées sont gardées ; si Google ne renvoie rien pour un cinéma, ses séances ne sont pas touchées. Les séances dont le film n'existe plus sont supprimées.
 
 La tâche GitHub Actions `.github/workflows/sync-showtimes.yml` la lance chaque jour vers 6 h (heure de Québec), et à la demande depuis l'onglet **Actions** (« Run workflow »). Elle a besoin de trois secrets dans **Settings > Secrets and variables > Actions > Repository secrets** : `MONGODB_URI`, `TMDB_API_KEY`, `SERPAPI_API_KEY`.
 

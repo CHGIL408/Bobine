@@ -69,9 +69,10 @@ const FORMATS = [
 ];
 const toFormat = (type = '') => FORMATS.find(([, re]) => re.test(type))?.[0] ?? 'Standard';
 
-// showtimes SerpApi (requête "cinéma") -> [{ title, datetime, format }]
-const flatten = (showtimes, now = new Date()) =>
-  showtimes.flatMap((day) => {
+// showtimes SerpApi (requête "cinéma") -> [{ title, datetime, format }], sans doublons (Google en renvoie parfois)
+const flatten = (showtimes, now = new Date()) => {
+  const seen = new Set();
+  return showtimes.flatMap((day) => {
     const date = parseDay(day, now);
     if (!date) return [];
     return (day.movies ?? []).flatMap((movie) =>
@@ -83,7 +84,11 @@ const flatten = (showtimes, now = new Date()) =>
         })),
       ),
     );
+  }).filter((r) => {
+    const key = `${r.title}|${r.datetime.getTime()}|${r.format}`;
+    return !seen.has(key) && seen.add(key);
   });
+};
 
 // Retrouve le film en base par son tmdbId, ou le crée depuis TMDB
 const findOrCreateMovie = async (title, cache) => {

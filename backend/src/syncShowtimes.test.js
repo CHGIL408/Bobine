@@ -62,3 +62,10 @@ test('toFormat garde les formats de salle Cineplex', () => {
   assert.strictEqual(toFormat('3D'), '3D');
   assert.strictEqual(toFormat(undefined), 'Standard');
 });
+
+test('flatten retire les séances en double renvoyées par Google', () => {
+  const showtimes = [
+    { day: 'Today', movies: [{ name: 'M', showing: [{ type: 'DBOX', time: ['7:00pm', '7:00pm'] }, { type: 'Standard', time: ['7:00pm'] }] }] },
+  ];
+  assert.deepStrictEqual(flatten(showtimes, NOW).map((r) => r.format), ['DBOX', 'Standard']);
+});

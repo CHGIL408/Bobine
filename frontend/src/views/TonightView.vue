@@ -51,10 +51,14 @@
               <img v-if="imageOk(row.movie.poster)" :src="row.movie.poster" alt="" loading="lazy" class="poster" @error="imageFailed(row.movie.poster)" />
               <span v-else class="poster" aria-hidden="true"></span>
               <span class="identity">
-                <RouterLink :to="`/movies/${row.movie._id}`">{{ row.movie.title }}</RouterLink>
+                <!-- le même film revient à plusieurs heures : le nom du lien dit laquelle -->
+                <RouterLink
+                  :to="`/movies/${row.movie._id}`"
+                  :aria-label="`${row.movie.title}, ${time(row.showtime.datetime)}, ${row.cinema}`"
+                >{{ row.movie.title }}</RouterLink>
                 <!-- chaque morceau reste entier : la ligne se coupe entre le cinéma et le format -->
                 <span class="sub num">
-                  <span class="piece">{{ row.cinema }}</span> ·
+                  <span class="piece">{{ row.cinema }}</span>&nbsp;·
                   <span class="piece format">{{ formatLabel(row.showtime.format) }}</span>
                 </span>
                 <span v-if="row.started" class="started">{{ row.started }}</span>
@@ -266,7 +270,7 @@ p {
 .skeleton li {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* un titre sur plusieurs lignes garde l'heure et l'affiche en haut */
   gap: 14px;
   padding: 10px 12px;
   border-top: 1px solid var(--border);

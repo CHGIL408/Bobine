@@ -58,6 +58,8 @@ describe('TonightView', () => {
     expect(titles(w)).toEqual(['Wicker', 'Dune', 'Court métrage', 'Wicker'])
     expect(w.findAll('.row .start').map((s) => s.text())).toEqual(['18 h 50', '19 h 10', '19 h 40', '21 h 30'])
     expect(w.find('.row a').attributes('href')).toBe('/movies/wicker')
+    // le même film à deux heures : le lecteur d'écran distingue les liens
+    expect(w.find('.row a').attributes('aria-label')).toBe('Wicker, 18 h 50, Odeon Ste-Foy')
   })
 
   it('indique le cinéma, le format et les séances déjà commencées', async () => {
