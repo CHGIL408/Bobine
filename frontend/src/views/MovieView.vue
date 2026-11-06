@@ -430,7 +430,7 @@ ul {
   color: var(--text);
   font-weight: 500;
   text-decoration: none;
-  transition: background 0.15s, transform 0.1s;
+  transition: background 150ms ease, transform 160ms var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -473,7 +473,7 @@ ul {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.1s, background 0.15s;
+  transition: transform 160ms var(--ease-out), background 150ms ease;
 }
 
 .buttons {
@@ -498,7 +498,7 @@ ul {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.1s;
+  transition: border-color 150ms ease, transform 160ms var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -557,6 +557,19 @@ ul {
 
 .trailer {
   margin-top: var(--gap);
+  /* le lecteur apparaît en fondu au lieu de surgir et de pousser les séances d'un coup */
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trailer {
+    transition: opacity 200ms var(--ease-out); /* sans transform : il n'y a plus de glissement */
+  }
 }
 
 .trailer iframe {

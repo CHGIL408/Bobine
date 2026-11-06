@@ -282,6 +282,11 @@ p {
   }
 }
 
+/* toute la ligne est cliquable : toute la ligne répond à l'appui */
+.row:has(a:active) {
+  background: var(--surface);
+}
+
 .start {
   flex: none;
   width: 72px;

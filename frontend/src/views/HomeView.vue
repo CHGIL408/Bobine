@@ -48,7 +48,15 @@
         </div>
       </template>
       <template v-else-if="lead">
-        <img v-if="leadImage" class="backdrop" :src="leadImage" alt="" @error="imageFailed(leadImage)" />
+        <!-- fondu au premier chargement seulement : la classe loaded reste quand un filtre change l'image -->
+        <img
+          v-if="leadImage"
+          class="backdrop"
+          :src="leadImage"
+          alt=""
+          @load="$event.target.classList.add('loaded')"
+          @error="imageFailed(leadImage)"
+        />
         <div v-else class="backdrop placeholder" aria-hidden="true"></div>
         <div class="lead-info">
           <h2>{{ lead.title }}</h2>
@@ -357,6 +365,13 @@ th {
   color: var(--text);
   font: inherit;
   cursor: pointer;
+  transition: border-color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .filters select:hover {
+    border-color: var(--faint);
+  }
 }
 
 .filters select:focus-visible {
@@ -406,6 +421,16 @@ td.times.num {
   display: block;
 }
 
+/* l'image arrive après le texte : un fondu court au lieu d'un saut */
+img.backdrop {
+  opacity: 0;
+  transition: opacity 200ms var(--ease-out);
+}
+
+img.backdrop.loaded {
+  opacity: 1;
+}
+
 .lead-info {
   display: flex;
   flex-direction: column;
@@ -452,7 +477,7 @@ td.times.num {
   color: var(--on-light);
   font-weight: 500;
   text-decoration: none;
-  transition: transform 0.1s, background 0.15s;
+  transition: transform 160ms var(--ease-out), background 150ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -497,6 +522,7 @@ td.times.num {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
+  transition: color 150ms ease;
 }
 
 .tabs button[aria-pressed='true'] {
@@ -547,6 +573,11 @@ tbody tr {
   tbody tr:hover {
     background: var(--surface);
   }
+}
+
+/* toute la ligne est cliquable : toute la ligne répond à l'appui */
+tbody tr:has(a:active) {
+  background: var(--surface);
 }
 
 td {

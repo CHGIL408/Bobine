@@ -24,7 +24,8 @@
       <li v-for="n in 3" :key="n" class="tile skeleton"></li>
     </ul>
 
-    <ul v-else class="grid">
+    <!-- tri par distance : chaque carte glisse vers sa nouvelle place au lieu de sauter -->
+    <TransitionGroup v-else name="tile" tag="ul" class="grid">
       <li v-for="cinema in sortedCinemas" :key="cinema._id" class="tile">
         <h2>{{ cinema.name }}</h2>
         <p v-if="distanceOf(cinema) != null" class="distance num">
@@ -72,7 +73,7 @@
           </p>
         </section>
       </li>
-    </ul>
+    </TransitionGroup>
   </main>
 </template>
 
@@ -245,6 +246,17 @@ p {
   margin-bottom: 20px;
 }
 
+/* tri par distance : les cartes glissent vers leur nouvelle place */
+.tile-move {
+  transition: transform 300ms var(--ease-in-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-move {
+    transition: none;
+  }
+}
+
 /* 3 cinémas pairs : colonnes égales, un seul gap */
 .grid {
   display: grid;
@@ -285,7 +297,7 @@ p {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.1s, border-color 0.15s;
+  transition: transform 160ms var(--ease-out), border-color 150ms ease;
 }
 
 .secondary:active {
@@ -396,7 +408,7 @@ h3 {
   color: var(--on-light);
   font-weight: 500;
   text-decoration: none;
-  transition: transform 0.1s, background 0.15s;
+  transition: transform 160ms var(--ease-out), background 150ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {

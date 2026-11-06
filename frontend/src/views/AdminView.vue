@@ -276,7 +276,7 @@ a:focus-visible {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
-  transition: transform 0.1s;
+  transition: transform 160ms var(--ease-out);
 }
 
 .primary:active {

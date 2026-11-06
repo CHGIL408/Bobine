@@ -24,6 +24,8 @@
   --fs-body: 14px;
   --fs-small: 12px;
   --font: 'Inter', system-ui, sans-serif;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* répond tout de suite, puis ralentit */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* déplacement à l'écran */
 }
 
 /* Remise à zéro (remplace Bootstrap, dont seule la base servait) */
