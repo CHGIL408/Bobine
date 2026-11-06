@@ -36,7 +36,7 @@
         </p>
         <div class="actions">
           <a :href="mapUrl(cinema)" target="_blank" rel="noopener" class="primary">Itinéraire</a>
-          <a v-if="cinema.website" :href="cinema.website" target="_blank" rel="noopener" class="text-action">
+          <a v-if="websiteOf(cinema)" :href="websiteOf(cinema)" target="_blank" rel="noopener" class="text-action">
             Site web
           </a>
         </div>
@@ -80,7 +80,7 @@
 import { imageFailed, imageOk } from '@/utils/images'
 import { computed, onMounted, ref } from 'vue'
 import { getCinemas, getMovies, getUpcomingShowtimes } from '@/services/api'
-import { idOf } from '@/utils/cinemas'
+import { idOf, websiteOf } from '@/utils/cinemas'
 import { dayKey, dayLabel, time, timeWithFormat } from '@/utils/time'
 import { cinemaPoint, distanceKm, formatDistance } from '@/utils/geo'
 

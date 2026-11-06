@@ -99,8 +99,8 @@
                 <span class="name">{{ group.cinema.name }}</span>
                 <span class="muted">{{ group.cinema.address }}, {{ group.cinema.city }}</span>
                 <a
-                  v-if="group.cinema.website"
-                  :href="group.cinema.website"
+                  v-if="websiteOf(group.cinema)"
+                  :href="websiteOf(group.cinema)"
                   target="_blank"
                   rel="noopener"
                   class="book"
@@ -138,6 +138,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getMovie, getShowtimes } from '@/services/api'
 import { useFavoritesStore } from '@/stores/favorites'
 import { showtimeIcs, icsHref } from '@/utils/ics'
+import { websiteOf } from '@/utils/cinemas'
 import { dayKey, dayLabel, formatLabel, time } from '@/utils/time'
 
 

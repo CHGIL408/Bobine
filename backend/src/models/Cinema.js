@@ -10,7 +10,8 @@ const cinemaSchema = new mongoose.Schema(
       coordinates: [Number],
     },
     phone: { type: String },
-    website: { type: String },
+    // http(s) seulement : un lien javascript: s'exécuterait au clic sur le site
+    website: { type: String, match: /^https?:\/\//i },
   },
   { timestamps: true },
 );

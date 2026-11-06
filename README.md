@@ -11,7 +11,7 @@ Application web de cinéma : films à l'affiche, cinémas de Québec et leurs s�
 - « Bientôt à l'affiche » sur l'accueil : les 12 prochaines sorties au Canada les plus attendues selon TMDB, avec affiche et date de sortie (lien vers la fiche TMDB) ; les films qui ont déjà des séances n'y sont pas ; liste gardée 6 h par le serveur pour limiter les appels à TMDB
 - Favoris : un bouton sur la page d'un film, et un onglet « Favoris » toujours présent sur l'accueil ; gardés dans le navigateur (pas de compte)
 - Page d'un film : fiche avec réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec) ; chaque heure s'ajoute à l'agenda (fichier `.ics`, fin estimée : durée du film + 15 min de bandes-annonces) ; lien « Réserver » vers le site du cinéma ; bouton « Partager » (menu du téléphone, sinon copie du lien)
-- Page « Ce soir » (`/ce-soir`) : toutes les séances de maintenant à minuit, tous cinémas confondus, triées par heure et regroupées par heure, avec cinéma et format ; les séances commencées depuis 15 min au plus restent affichées (« A commencé il y a 12 min ») ; filtre par cinéma ; quand il ne reste rien ce soir, les premières séances de demain
+- Page « Ce soir » (`/ce-soir`) : toutes les séances de maintenant à minuit, tous cinémas confondus, triées par heure et regroupées par heure, avec cinéma et format ; les séances commencées depuis 15 min au plus restent affichées (« A commencé il y a 12 min ») ; filtre par cinéma ; quand il ne reste rien ce soir, les premières séances de demain ; une page restée ouverte passé minuit recharge et montre la nouvelle journée
 - Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire, lien vers la page du cinéma sur cineplex.com et les films encore à l'affiche aujourd'hui (heures et format), ou la prochaine séance ; bouton « Trier par distance » (position demandée au navigateur en haute précision, jamais envoyée au serveur ; avertissement si elle n'est connue qu'à plus de 2 km près, par exemple localisée par l'adresse IP ; coordonnées des cinémas vérifiées sur OpenStreetMap)
 - Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB (fiche en français, résumé anglais si le français manque)
 - Page `/admin` (non liée dans le menu) : saisir la clé `ADMIN_API_KEY` (gardée seulement dans l'onglet), ajouter un film par son identifiant TMDB, supprimer un film et ses séances
@@ -79,6 +79,8 @@ Les lectures (`GET`) sont publiques. Toute écriture exige le header `x-api-key`
 ```sh
 curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" -d '{"tmdbId": 693134}'
 ```
+
+Le champ `website` d'un cinéma doit commencer par `http://` ou `https://` (sinon 400) : un lien `javascript:` s'exécuterait au clic sur le site. Le site n'affiche de toute façon que les liens http(s).
 
 | Méthode | Route                 | Description                             |
 |---------|-----------------------|-----------------------------------------|

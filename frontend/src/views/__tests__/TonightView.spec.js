@@ -120,14 +120,24 @@ describe('TonightView', () => {
     expect(first().find('span.poster').exists()).toBe(true)
   })
 
-  it('passé minuit, une page restée ouverte ne présente pas la journée suivante comme « ce soir »', async () => {
+  it('passé minuit, une page restée ouverte recharge et montre la nouvelle journée', async () => {
+    // triées par heure, comme l'API
+    getUpcomingShowtimes.mockResolvedValue([
+      ...SHOWTIMES.slice(0, -1),
+      { _id: 't0', movie: 'wicker', cinema: 'c1', datetime: at('2026-11-02T00:30:00') },
+      SHOWTIMES.at(-1),
+    ])
     vi.setSystemTime(new Date(at('2026-11-01T23:50:00')))
     const w = await mountTonight()
-    vi.setSystemTime(new Date(at('2026-11-02T00:05:00')))
-    vi.advanceTimersByTime(60e3)
-    await flushPromises()
-    expect(w.find('.message').text()).toContain('Plus de séances ce soir')
     expect(w.find('.block-title').text()).toBe('Demain')
-    expect(titles(w)).toEqual(['Dune']) // les séances du 2 novembre, sous « Demain »
+    expect(titles(w)).toEqual(['Wicker', 'Dune'])
+
+    vi.setSystemTime(new Date(at('2026-11-02T00:59:00')))
+    vi.advanceTimersByTime(60e3) // 1 h : nouveau jour, la page recharge
+    await flushPromises()
+    expect(getUpcomingShowtimes).toHaveBeenCalledTimes(2)
+    expect(w.find('.block-title').exists()).toBe(false)
+    expect(w.find('.subline').text()).toBe('1 séance d’ici minuit') // la séance de 0 h 30 est passée
+    expect(titles(w)).toEqual(['Dune'])
   })
 })

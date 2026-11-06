@@ -81,7 +81,7 @@ const movies = ref([])
 const cinemas = ref([])
 const selectedCinema = ref('')
 const now = ref(new Date())
-// Le soir affiché : la date au chargement. Passé minuit, ce soir est fini, même si la page reste ouverte.
+// Le soir affiché : la date au chargement ; passé minuit, la page recharge (voir l'horloge plus bas)
 const evening = ref(dayKey(new Date()))
 
 const { slow, start: startSlow, stop: stopSlow } = useSlowLoading()
@@ -104,11 +104,14 @@ const load = async () => {
   }
 }
 
-// "a commencé" et la fin de soirée suivent l'heure qui passe, sans recharger
+// "a commencé" suit l'heure qui passe ; au changement de jour, recharge comme une page neuve
 let clock
 onMounted(() => {
   load()
-  clock = setInterval(() => (now.value = new Date()), 60e3)
+  clock = setInterval(() => {
+    now.value = new Date()
+    if (status.value === 'ready' && dayKey(now.value) !== evening.value) load()
+  }, 60e3)
 })
 onUnmounted(() => clearInterval(clock))
 
@@ -139,7 +142,6 @@ const startedLabel = (iso) => {
 // Ce soir : d'il y a 15 min (bandes-annonces) jusqu'à minuit, heure de Québec
 const tonight = computed(() => {
   const today = evening.value
-  if (dayKey(now.value) !== today) return [] // minuit est passé
   const from = now.value.getTime() - TRAILERS_MINUTES * 60e3
   return showtimes.value
     .filter((s) => inCinema(s) && new Date(s.datetime).getTime() >= from && dayKey(new Date(s.datetime)) === today)
@@ -153,9 +155,9 @@ const tomorrow = computed(() => {
   const next = nextDayKey(evening.value)
   return showtimes.value
     .filter((s) => inCinema(s) && dayKey(new Date(s.datetime)) === next)
-    .slice(0, 8)
     .map(toRow)
     .filter(Boolean)
+    .slice(0, 8)
 })
 
 // Lignes -> [{ hour: 19, rows }] (déjà triées par heure par l'API)
