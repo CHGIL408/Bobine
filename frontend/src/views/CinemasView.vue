@@ -285,11 +285,17 @@ p {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: transform 0.1s, border-color 0.15s;
 }
 
-.secondary:hover {
-  border-color: var(--text);
+.secondary:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .secondary:hover {
+    border-color: var(--text);
+  }
 }
 
 .secondary:disabled {
@@ -348,8 +354,10 @@ h3 {
   text-decoration: none;
 }
 
-.films a:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .films a:hover {
+    text-decoration: underline;
+  }
 }
 
 .films .times {
@@ -391,8 +399,10 @@ h3 {
   transition: transform 0.1s, background 0.15s;
 }
 
-.primary:hover {
-  background: var(--primary-hover);
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover {
+    background: var(--primary-hover);
+  }
 }
 
 .primary:active {
@@ -414,8 +424,10 @@ a {
   cursor: pointer;
 }
 
-.text-action:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .text-action:hover {
+    text-decoration: underline;
+  }
 }
 
 .message {

@@ -276,8 +276,10 @@ p {
   border-top: 1px solid var(--border);
 }
 
-.row:hover {
-  background: var(--surface);
+@media (hover: hover) and (pointer: fine) {
+  .row:hover {
+    background: var(--surface);
+  }
 }
 
 .start {
@@ -366,8 +368,10 @@ p {
   font-weight: 500;
 }
 
-.text-action:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .text-action:hover {
+    text-decoration: underline;
+  }
 }
 
 button:focus-visible {

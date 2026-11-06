@@ -455,8 +455,10 @@ td.times.num {
   transition: transform 0.1s, background 0.15s;
 }
 
-.primary:hover {
-  background: var(--primary-hover);
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover {
+    background: var(--primary-hover);
+  }
 }
 
 .primary:active {
@@ -497,9 +499,14 @@ td.times.num {
   cursor: pointer;
 }
 
-.tabs button:hover,
 .tabs button[aria-pressed='true'] {
   color: var(--text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tabs button:hover {
+    color: var(--text);
+  }
 }
 
 .tabs button[aria-pressed='true'] {
@@ -536,8 +543,10 @@ tbody tr {
   border-top: 1px solid var(--border);
 }
 
-tbody tr:hover {
-  background: var(--surface);
+@media (hover: hover) and (pointer: fine) {
+  tbody tr:hover {
+    background: var(--surface);
+  }
 }
 
 td {
@@ -766,8 +775,10 @@ tr:has(a:focus-visible) {
   transition: opacity 0.15s;
 }
 
-.coming-soon a:hover img {
-  opacity: 0.85;
+@media (hover: hover) and (pointer: fine) {
+  .coming-soon a:hover img {
+    opacity: 0.85;
+  }
 }
 
 .coming-soon .title {
@@ -780,8 +791,10 @@ tr:has(a:focus-visible) {
   overflow: hidden;
 }
 
-.coming-soon a:hover .title {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .coming-soon a:hover .title {
+    text-decoration: underline;
+  }
 }
 
 .text-action {
@@ -795,8 +808,10 @@ tr:has(a:focus-visible) {
   cursor: pointer;
 }
 
-.text-action:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .text-action:hover {
+    text-decoration: underline;
+  }
 }
 
 .empty,

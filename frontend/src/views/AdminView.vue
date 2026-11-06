@@ -276,6 +276,11 @@ a:focus-visible {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.primary:active {
+  transform: scale(0.97);
 }
 
 .primary:disabled {
@@ -313,8 +318,10 @@ a:focus-visible {
   cursor: pointer;
 }
 
-.text-action:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .text-action:hover {
+    text-decoration: underline;
+  }
 }
 
 .films {
@@ -377,8 +384,10 @@ a:focus-visible {
   cursor: pointer;
 }
 
-.danger:hover {
-  border-color: var(--negative);
+@media (hover: hover) and (pointer: fine) {
+  .danger:hover {
+    border-color: var(--negative);
+  }
 }
 
 .nowrap {

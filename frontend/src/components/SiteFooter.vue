@@ -58,8 +58,10 @@ a {
   transition: color 0.15s;
 }
 
-a:hover {
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  a:hover {
+    color: var(--text);
+  }
 }
 
 a:focus-visible {

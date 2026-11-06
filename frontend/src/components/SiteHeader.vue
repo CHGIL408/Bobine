@@ -66,9 +66,14 @@ nav a {
   transition: color 0.15s;
 }
 
-nav a:hover,
 nav a.router-link-exact-active {
   color: var(--text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  nav a:hover {
+    color: var(--text);
+  }
 }
 
 a:focus-visible {

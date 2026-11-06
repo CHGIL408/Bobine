@@ -282,8 +282,10 @@ p {
   text-decoration: none;
 }
 
-.back:hover {
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .back:hover {
+    color: var(--text);
+  }
 }
 
 .film {
@@ -364,9 +366,14 @@ p {
   cursor: pointer;
 }
 
-.tabs button:hover,
 .tabs button[aria-pressed='true'] {
   color: var(--text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tabs button:hover {
+    color: var(--text);
+  }
 }
 
 .tabs button[aria-pressed='true'] {
@@ -426,8 +433,10 @@ ul {
   transition: background 0.15s, transform 0.1s;
 }
 
-.times a:hover {
-  background: var(--raised);
+@media (hover: hover) and (pointer: fine) {
+  .times a:hover {
+    background: var(--raised);
+  }
 }
 
 .times a:active {
@@ -492,8 +501,10 @@ ul {
   transition: border-color 0.15s, transform 0.1s;
 }
 
-.secondary:hover {
-  border-color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .secondary:hover {
+    border-color: var(--text);
+  }
 }
 
 .secondary:active {
@@ -514,8 +525,10 @@ ul {
   text-decoration: none;
 }
 
-.book:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .book:hover {
+    text-decoration: underline;
+  }
 }
 
 .share-status {
@@ -532,8 +545,10 @@ ul {
   color: var(--accent);
 }
 
-.primary:hover {
-  background: var(--primary-hover);
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover {
+    background: var(--primary-hover);
+  }
 }
 
 .primary:active {
@@ -580,8 +595,10 @@ ul {
   cursor: pointer;
 }
 
-.text-action:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .text-action:hover {
+    text-decoration: underline;
+  }
 }
 
 a:focus-visible,

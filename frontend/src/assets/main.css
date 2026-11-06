@@ -1,6 +1,6 @@
 /* tasteskill app sheet: true-black-flat, seed 416205925 (elevation by lightness, colour on data only) */
 :root {
-  --ground: #000000;
+  --ground: #000000; /* à changer aussi dans index.html (theme-color) */
   --surface: #111111;
   --raised: #2a2a2a;
   --border: #1a1a1a;
@@ -36,6 +36,7 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent; /* pas de flash gris au toucher ; le retour vient de :active */
 }
 
 body {
@@ -106,6 +107,37 @@ select:not(:disabled) {
   cursor: pointer;
 }
 
+/* toucher : clic immédiat (pas d'attente du double-tap) */
+a,
+button,
+select,
+[role='button'] {
+  touch-action: manipulation;
+}
+
+/* un appui long sur un bouton ne sélectionne pas son libellé */
+button {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@supports (-webkit-touch-callout: none) {
+  /* iOS seulement : sous 16 px, il zoome sur le champ et ne dézoome pas ; !important passe devant les « font: inherit » des composants */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@media (hover: none) {
+  /* retour au toucher, sauf pour les boutons qui ont déjà leur scale(0.97) au :active */
+  a:not(.primary, .secondary, .times a):active,
+  button:not(.primary, .secondary):active {
+    opacity: 0.7;
+  }
+}
+
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.875em;
@@ -126,7 +158,8 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 100vh; /* repli pour les navigateurs sans dvh */
+  min-height: 100dvh; /* 100vh déborde sous la barre d'adresse sur mobile */
 }
 
 .num {
