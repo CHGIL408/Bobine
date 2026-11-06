@@ -40,7 +40,10 @@ describe('MovieView', () => {
     getMovie.mockReset().mockResolvedValue(MOVIE)
     getShowtimes.mockReset().mockResolvedValue(SHOWTIMES)
   })
-  afterEach(() => vi.useRealTimers())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals() // même si un test échoue avant la fin
+  })
 
   it('affiche la fiche du film', async () => {
     const w = await mountView()
@@ -55,7 +58,7 @@ describe('MovieView', () => {
     expect(w.findAll('.tabs button').map((t) => t.text())).toEqual(["Aujourd'hui", 'mar. 3 nov.'])
     expect(cinemaRows(w)).toEqual([
       ['Cinéma Cineplex IMAX aux Galeries de la Capitale', ['16 h 30IMAX']],
-      ['Cinéma Cineplex Odeon Beauport', ['16 h 30STD', '19 h 30STD']],
+      ['Cinéma Cineplex Odeon Beauport', ['16 h 30', '19 h 30']], // STD n'est pas répété
     ])
     expect(w.text()).toContain('4 séances à venir dans 2 cinémas')
   })
@@ -128,12 +131,16 @@ describe('MovieView', () => {
   it('copie le lien sinon, et le dit', async () => {
     const writeText = vi.fn().mockResolvedValue()
     vi.stubGlobal('navigator', { ...navigator, share: undefined, clipboard: { writeText } })
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] })
+    vi.setSystemTime(new Date(at('2026-11-01T15:00:00')))
     const w = await mountView()
     await w.find('button.share').trigger('click')
     await flushPromises()
     expect(writeText).toHaveBeenCalledWith(window.location.href)
-    expect(w.find('[role=status]').text()).toBe('Lien copié')
-    vi.unstubAllGlobals()
+    expect(w.find('.share-status').text()).toBe('Lien copié')
+    vi.advanceTimersByTime(2500) // la confirmation s'efface
+    await flushPromises()
+    expect(w.find('.share-status').text()).toBe('')
   })
 
   it("n'affiche ni bouton ni distribution quand TMDB n'en a pas", async () => {

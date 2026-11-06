@@ -78,6 +78,9 @@
           <p v-if="status === 'ready'" class="muted num">
             {{ summary }}<template v-if="summary"> · touchez une heure pour l'ajouter à votre agenda</template>
           </p>
+          <p v-else-if="status === 'loading'" class="muted" role="status">
+            {{ slow ? SLOW_MESSAGE : 'Chargement des séances…' }}
+          </p>
         </div>
 
         <template v-if="days.length">
@@ -116,7 +119,7 @@
                     :download="fileName(s)"
                     :aria-label="`Ajouter la séance de ${time(s.datetime)} en ${formatLabel(s.format) === 'STD' ? 'format standard' : s.format} au ${group.cinema.name} à mon agenda`"
                   >
-                    {{ time(s.datetime) }}<span class="format">{{ formatLabel(s.format) }}</span>
+                    {{ time(s.datetime) }}<span v-if="formatLabel(s.format) !== 'STD'" class="format">{{ formatLabel(s.format) }}</span>
                   </a>
                 </li>
               </ul>
@@ -133,13 +136,14 @@
 
 <script setup>
 import { imageFailed, imageOk } from '@/utils/images'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getMovie, getShowtimes } from '@/services/api'
 import { useFavoritesStore } from '@/stores/favorites'
 import { showtimeIcs, icsHref } from '@/utils/ics'
 import { websiteOf } from '@/utils/cinemas'
 import { dayKey, dayLabel, formatLabel, time } from '@/utils/time'
+import { SLOW_MESSAGE, useSlowLoading } from '@/utils/slowLoading'
 
 
 const route = useRoute()
@@ -158,6 +162,14 @@ const status = ref('loading')
 const selectedDay = ref('')
 const showTrailer = ref(false)
 const shareStatus = ref('')
+// confirmation passagère : elle s'efface après 2,5 s
+let shareTimer
+const announce = (message) => {
+  shareStatus.value = message
+  clearTimeout(shareTimer)
+  shareTimer = setTimeout(() => (shareStatus.value = ''), 2500)
+}
+onUnmounted(() => clearTimeout(shareTimer))
 
 // Menu de partage du téléphone si le navigateur en a un, sinon copie du lien
 const share = async () => {
@@ -172,14 +184,17 @@ const share = async () => {
   }
   try {
     await navigator.clipboard.writeText(url)
-    shareStatus.value = 'Lien copié'
+    announce('Lien copié')
   } catch {
+    clearTimeout(shareTimer) // le lien à copier reste affiché : un ancien « Lien copié » ne doit pas l'effacer
     shareStatus.value = `Copiez ce lien : ${url}`
   }
 }
 
+const { slow, start: startSlow, stop: stopSlow } = useSlowLoading()
 const load = async () => {
   status.value = 'loading'
+  startSlow()
   try {
     ;[movie.value, showtimes.value] = await Promise.all([
       getMovie(route.params.id),
@@ -190,6 +205,8 @@ const load = async () => {
     selectedDay.value = days.value[0]?.key ?? ''
   } catch {
     status.value = 'error'
+  } finally {
+    stopSlow()
   }
 }
 onMounted(load)
@@ -364,6 +381,7 @@ p {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
+  transition: color 150ms ease;
 }
 
 .tabs button[aria-pressed='true'] {
@@ -518,7 +536,7 @@ ul {
 
 .book {
   align-self: flex-start;
-  margin-top: 4px;
+  padding: 4px 0; /* zone de toucher d'au moins 24 px */
   color: var(--text);
   font-size: 13px;
   font-weight: 500;
@@ -535,6 +553,11 @@ ul {
   align-self: center;
   color: var(--muted);
   font-size: 13px;
+  transition: opacity 150ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+  }
 }
 
 .share-status:empty {
