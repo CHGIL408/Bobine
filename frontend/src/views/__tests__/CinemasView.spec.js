@@ -30,8 +30,8 @@ const mountView = async () => {
   await flushPromises()
   return w
 }
-const cards = (w) => w.findAll('.grid > li')
-const films = (card) => card.findAll('.films li').map((li) => [li.find('a').text(), li.find('.times').text()])
+const cards = (w) => w.findAll('.cinemas > li')
+const films = (card) => card.findAll('.films li').map((li) => li.find('a').text())
 
 describe('CinemasView', () => {
   beforeEach(() => {
@@ -58,26 +58,18 @@ describe('CinemasView', () => {
     expect(getMovies).toHaveBeenCalledWith({ showing: true })
   })
 
-  it("liste les films encore à l'affiche aujourd'hui, le plus tôt d'abord, 6 au maximum", async () => {
+  it("liste tous les films encore à l'affiche aujourd'hui, le plus tôt d'abord", async () => {
     const w = await mountView()
     const beauport = cards(w)[0]
-    expect(films(beauport).slice(0, 3)).toEqual([
-      ['Film 1', '16 h 00 STD · 21 h 00 3D'],
-      ['Film 2', '18 h 30 STD'],
-      ['Film 3', '22 h 03 STD'],
-    ])
-    expect(films(beauport)).toHaveLength(6) // m0 (séance passée) et la séance de demain sont exclus
-    expect(beauport.find('.films a').attributes('href')).toBe('/movies/m1')
-  })
-
-  it('affiche les autres films à la demande', async () => {
-    const w = await mountView()
-    const more = cards(w)[0].find('button.more')
-    expect(more.text()).toBe('Afficher 1 autre film')
-    await more.trigger('click')
-    expect(films(cards(w)[0])).toHaveLength(7)
-    expect(cards(w)[0].find('button.more').text()).toBe('Afficher moins')
-    expect(cards(w)[0].find('button.more').attributes('aria-expanded')).toBe('true')
+    // m0 (séance passée) est exclu ; m1 et m2 ont deux séances mais n'apparaissent qu'une fois
+    expect(films(beauport)).toEqual(['Film 1', 'Film 2', 'Film 3', 'Film 4', 'Film 5', 'Film 6', 'Film 7'])
+    // toute l'affiche mène au film, avec le titre complet au survol
+    const link = beauport.find('.films a')
+    expect(link.attributes('href')).toBe('/movies/m1')
+    expect(link.attributes('title')).toBe('Film 1')
+    expect(link.find('img').attributes('src')).toBe('p1')
+    expect(link.find('.title').text()).toBe('Film 1')
+    expect(beauport.find('.times').exists()).toBe(false) // les heures sont sur la page du film
   })
 
   it("indique la prochaine séance quand il n'y a plus rien aujourd'hui", async () => {
@@ -126,6 +118,6 @@ describe('CinemasView', () => {
     expect(w.find('[role=alert]').exists()).toBe(true)
     await w.find('[role=alert] button').trigger('click')
     await flushPromises()
-    expect(w.findAll('.grid > li h2')).toHaveLength(2)
+    expect(w.findAll('.cinemas > li h2')).toHaveLength(2)
   })
 })
