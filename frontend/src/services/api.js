@@ -1,7 +1,8 @@
 import axios from 'axios'
 
+// VITE_API_URL (ex. dans frontend/.env.local) : un serveur local au lieu de celui en ligne
 const api = axios.create({
-  baseURL: 'https://bobine-backend.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL ?? 'https://bobine-backend.onrender.com/api',
 })
 
 // Développement seulement : ?data=worst|empty|one|huge remplace les réponses par des données extrêmes
@@ -19,6 +20,12 @@ export const getMovies = async (params) => {
 export const getMovie = async (id) => {
   if (devData) return fake('movie', id)
   const response = await api.get(`/movies/${id}`)
+  return response.data
+}
+
+// Prochaine sortie, pas encore en base : la fiche vient de TMDB (avec _id si le film a entre-temps des séances)
+export const getTmdbMovie = async (tmdbId) => {
+  const response = await api.get(`/movies/tmdb/${tmdbId}`)
   return response.data
 }
 

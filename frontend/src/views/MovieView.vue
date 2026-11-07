@@ -14,7 +14,7 @@
         <div class="info">
           <h1 id="film-title">{{ movie.title ?? 'Chargement…' }}</h1>
           <p v-if="movie.title" class="meta num">
-            {{ year }} · {{ duration }} · {{ movie.genre?.join(', ') || '—' }}
+            {{ releaseLabel }} · {{ duration }} · {{ movie.genre?.join(', ') || '—' }}
           </p>
           <p v-if="movie.title" class="rating num">{{ rating }}<span v-if="movie.rating" class="unit"> /10</span></p>
           <p class="synopsis">{{ movie.synopsis }}</p>
@@ -28,7 +28,7 @@
               <dd>{{ movie.cast.join(', ') }}</dd>
             </template>
           </dl>
-          <div v-if="movie._id" class="buttons">
+          <div v-if="movie.title" class="buttons">
             <button
               v-if="movie.trailerKey"
               type="button"
@@ -39,7 +39,9 @@
             >
               {{ showTrailer ? 'Masquer la bande-annonce' : 'Voir la bande-annonce' }}
             </button>
+            <!-- prochaine sortie : pas encore d'_id à garder en favori -->
             <button
+              v-if="movie._id"
               type="button"
               class="secondary fav"
               :aria-pressed="favorites.has(movie._id)"
@@ -127,7 +129,7 @@
           </ul>
         </template>
         <p v-else-if="status === 'ready'" class="panel message">
-          Aucune séance prévue pour ce film dans nos cinémas.
+          {{ notOutYet ? 'Pas encore de séances : le film n’est pas encore sorti.' : 'Aucune séance prévue pour ce film dans nos cinémas.' }}
         </p>
       </section>
     </template>
@@ -138,11 +140,11 @@
 import { imageFailed, imageOk } from '@/utils/images'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getMovie, getShowtimes } from '@/services/api'
+import { getMovie, getShowtimes, getTmdbMovie } from '@/services/api'
 import { useFavoritesStore } from '@/stores/favorites'
 import { showtimeIcs, icsHref } from '@/utils/ics'
 import { websiteOf } from '@/utils/cinemas'
-import { dayKey, dayLabel, formatLabel, time } from '@/utils/time'
+import { calendarDay, dayKey, dayLabel, formatLabel, time } from '@/utils/time'
 import { SLOW_MESSAGE, useSlowLoading } from '@/utils/slowLoading'
 
 
@@ -196,10 +198,15 @@ const load = async () => {
   status.value = 'loading'
   startSlow()
   try {
-    ;[movie.value, showtimes.value] = await Promise.all([
-      getMovie(route.params.id),
-      getShowtimes(route.params.id),
-    ])
+    if (route.params.tmdbId) {
+      movie.value = await getTmdbMovie(route.params.tmdbId)
+      showtimes.value = movie.value._id ? await getShowtimes(movie.value._id) : []
+    } else {
+      ;[movie.value, showtimes.value] = await Promise.all([
+        getMovie(route.params.id),
+        getShowtimes(route.params.id),
+      ])
+    }
     status.value = 'ready'
     document.title = `${movie.value.title} · Bobine`
     selectedDay.value = days.value[0]?.key ?? ''
@@ -250,7 +257,11 @@ const summary = computed(() => {
   return `${n} séance${n > 1 ? 's' : ''} à venir dans ${cinemas} cinéma${cinemas > 1 ? 's' : ''}`
 })
 
-const year = computed(() => movie.value.releaseDate?.slice(0, 4) ?? '—')
+const releaseLabel = computed(() =>
+  movie.value.releaseDate ? `Sortie au Canada le ${calendarDay(movie.value.releaseDate, { year: 'numeric' })}` : '—',
+)
+// sortie après aujourd'hui à Québec ; sans date : on ne sait pas, donc pas « pas encore sorti »
+const notOutYet = computed(() => movie.value.releaseDate?.slice(0, 10) > dayKey(new Date()))
 const duration = computed(() => {
   const d = movie.value.duration
   return d ? `${Math.floor(d / 60)} h ${String(d % 60).padStart(2, '0')}` : '—'

@@ -56,9 +56,26 @@ test('getMovieById transforme la réponse TMDB en film Bobine', async () => {
   assert.strictEqual(requests.at(-1).url, '/movie/27205');
   assert.deepStrictEqual(requests.at(-1).config.params, {
     language: 'fr-FR',
-    append_to_response: 'videos,credits',
+    append_to_response: 'videos,credits,release_dates',
     include_video_language: 'fr,en,null',
   });
+});
+
+test('getMovieById prend la sortie en salle au Canada, sinon aux États-Unis, sinon la date mondiale', async () => {
+  const base = { title: 'X', genres: [], release_date: '2026-09-01' };
+  const ca = (release_dates) => ({ release_dates: { results: [{ iso_3166_1: 'US', release_dates: [{ type: 3, release_date: '2026-08-01T00:00:00.000Z' }] }, { iso_3166_1: 'CA', release_dates }] } });
+  responses['/movie/3'] = { ...base, ...ca([
+    { type: 1, release_date: '2026-08-15T00:00:00.000Z' },
+    { type: 3, release_date: '2026-09-19T00:00:00.000Z' },
+    { type: 3, release_date: '2026-09-12T00:00:00.000Z' },
+  ]) };
+  assert.strictEqual((await getMovieById(3)).releaseDate, '2026-09-12');
+  responses['/movie/4'] = { ...base, ...ca([{ type: 2, release_date: '2026-09-05T00:00:00.000Z' }]) };
+  assert.strictEqual((await getMovieById(4)).releaseDate, '2026-09-05');
+  responses['/movie/6'] = { ...base, release_dates: { results: [{ iso_3166_1: 'FR', release_dates: [{ type: 3, release_date: '2026-11-04T00:00:00.000Z' }] }, { iso_3166_1: 'US', release_dates: [{ type: 3, release_date: '2026-11-11T00:00:00.000Z' }] }] } };
+  assert.strictEqual((await getMovieById(6)).releaseDate, '2026-11-11'); // Soldat fantôme : pas de date canadienne sur TMDB
+  responses['/movie/5'] = base;
+  assert.strictEqual((await getMovieById(5)).releaseDate, '2026-09-01');
 });
 
 test("getMovieById sans distribution ni vidéo renvoie des champs vides", async () => {
@@ -122,7 +139,16 @@ test('getUpcomingMovies garde les films pas encore sortis à Québec, triés par
     { tmdbId: 4, title: 'Demain', releaseDate: '2026-11-05', poster: 'https://image.tmdb.org/t/p/w500/d.jpg' },
     { tmdbId: 3, title: 'Plus tard', releaseDate: '2026-12-19', poster: null },
   ]);
-  assert.deepStrictEqual(requests.at(-1).config.params, { language: 'fr-FR', region: 'CA', page: 2 });
+  assert.deepStrictEqual(requests.filter((r) => r.url === '/movie/upcoming').at(-1).config.params, { language: 'fr-FR', region: 'CA', page: 2 });
+});
+
+test('getUpcomingMovies prend la même date que la page du film (Canada, sinon États-Unis)', async () => {
+  const now = new Date('2026-11-01T12:00:00Z');
+  responses['/movie/upcoming'] = { results: [{ id: 70, title: 'Soldat fantôme', release_date: '2026-11-04' }] };
+  responses['/movie/70/release_dates'] = { results: [{ iso_3166_1: 'US', release_dates: [{ type: 3, release_date: '2026-11-11T00:00:00.000Z' }, { type: 3, release_date: null }] }] };
+  const [movie] = await getUpcomingMovies(now);
+  assert.strictEqual(movie.releaseDate, '2026-11-11');
+  delete responses['/movie/70/release_dates'];
 });
 
 test('getUpcomingMovies garde les plus populaires, puis les trie par date', async () => {

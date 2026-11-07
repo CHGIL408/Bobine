@@ -11,6 +11,11 @@ export const nextDayKey = (key) => {
   return d.toISOString().slice(0, 10)
 }
 
+// "2026-11-14" (ou ISO à minuit UTC) -> "14 novembre", ou "14 novembre 2026" avec { year: 'numeric' }
+// lu comme un jour du calendrier : le fuseau du visiteur ne le décale pas d'un jour
+export const calendarDay = (iso, options) =>
+  new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', timeZone: 'UTC', ...options })
+
 // ISO -> "16 h 30"
 export const time = (iso) =>
   new Date(iso).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit', timeZone: TZ })

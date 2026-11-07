@@ -47,7 +47,7 @@ const leadTitle = (w) => w.find('.feature h2').text()
 const count = (w) => w.find('.count').text()
 const clickTab = (w, name) => w.findAll('.tabs button').find((b) => b.text() === name).trigger('click')
 const search = (w, text) => w.find('input[type=search]').setValue(text)
-const choose = (w, label, value) => w.find(`select[aria-label="${label}"]`).setValue(value)
+const choose = (w, label, value) => w.find(`[aria-label="${label}"]`).setValue(value)
 
 describe('HomeView', () => {
   beforeEach(() => {
@@ -68,21 +68,21 @@ describe('HomeView', () => {
     )
     expect(leadTitle(w)).toBe('Inception')
     expect(w.find('.feature a').attributes('href')).toBe('/movies/inc')
-    expect(rowTitles(w)).toEqual(['Dune : Deuxième partie', 'Oppenheimer'])
+    expect(rowTitles(w)).toEqual(['Inception', 'Dune : Deuxième partie', 'Oppenheimer']) // la vedette reste dans la liste
     expect(getMovies).toHaveBeenCalledWith({ showing: true })
   })
 
   it('formate note et durée à la française, avec un tiret si absent', async () => {
     const w = await mountHome()
     expect(w.find('.feature .meta').text()).toBe('— · 2 h 05 · Action, Science-Fiction')
-    const dune = w.findAll('tbody tr')[0].findAll('td.num:not(.times)').map((td) => td.text())
+    const dune = w.findAll('tbody tr')[1].findAll('td.num:not(.times)').map((td) => td.text())
     expect(dune).toEqual(['2 h 45', '8,1 /10'])
   })
 
   it("affiche un tiret au lieu de 0,0 quand personne n'a encore voté", async () => {
     getMovies.mockResolvedValue([MOVIES[2], { ...MOVIES[1], rating: 0 }])
     const w = await mountHome()
-    expect(w.find('tbody td.score').text()).toBe('—')
+    expect(w.findAll('tbody td.score')[1].text()).toBe('—')
   })
 
   it('indique la prochaine séance du film en vedette et les prochaines heures de chaque film', async () => {
@@ -91,7 +91,7 @@ describe('HomeView', () => {
       "Prochaine séance : Aujourd'hui 19 h 30 STD · Odeon Beauport",
     )
     const times = w.findAll('tbody td.times').map((td) => td.text())
-    expect(times).toEqual(["Aujourd'hui 16 h 30 STD, 21 h 35 DBOX", 'Demain 18 h 00 STD']) // la séance de 13 h est passée
+    expect(times).toEqual(["Aujourd'hui 19 h 30 STD", "Aujourd'hui 16 h 30 STD, 21 h 35 DBOX", 'Demain 18 h 00 STD']) // la séance de 13 h est passée
   })
 
   it("propose les jours qui ont des séances et l'ensemble des cinémas", async () => {
@@ -106,29 +106,41 @@ describe('HomeView', () => {
     await choose(w, 'Jour', '2026-11-02')
     expect(leadTitle(w)).toBe('Inception')
     expect(w.find('.next').text()).toContain('Demain 16 h 00 STD · Odeon Ste-Foy')
-    expect(rowTitles(w)).toEqual(['Oppenheimer'])
+    expect(rowTitles(w)).toEqual(['Inception', 'Oppenheimer'])
     expect(count(w)).toBe('2 films')
   })
 
-  it("filtre par heure (« dès 21 h »)", async () => {
+  it("filtre à partir d'une heure précise", async () => {
     const w = await mountHome()
-    await choose(w, 'Heure', String(21 * 60))
+    await choose(w, 'Dès quelle heure', '21:35')
     expect(leadTitle(w)).toBe('Dune : Deuxième partie')
     expect(count(w)).toBe('1 film')
+    await choose(w, 'Dès quelle heure', '21:36')
+    expect(count(w)).toBe('0 film')
+    await choose(w, 'Dès quelle heure', '00:00') // minuit = toute heure : pas de filtre actif
+    expect(count(w)).toBe('3 films')
+    expect(w.find('.filters button').exists()).toBe(false)
+  })
+
+  it('trie la liste de A à Z sans changer la vedette', async () => {
+    const w = await mountHome()
+    await choose(w, 'Trier', 'title')
+    expect(rowTitles(w)).toEqual(['Dune : Deuxième partie', 'Inception', 'Oppenheimer'])
+    expect(leadTitle(w)).toBe('Inception')
   })
 
   it('filtre par cinéma', async () => {
     const w = await mountHome()
     await choose(w, 'Cinéma', 'c1')
     expect(count(w)).toBe('3 films')
-    expect(w.findAll('tbody td.times').map((td) => td.text())).toEqual(['mar. 3 nov. 20 h 00 STD', 'Demain 18 h 00 STD'])
+    expect(w.findAll('tbody td.times').map((td) => td.text())).toEqual(["Aujourd'hui 19 h 30 STD", 'mar. 3 nov. 20 h 00 STD', 'Demain 18 h 00 STD'])
   })
 
   it('affiche un message sans résultat, puis réinitialise jour, heure et cinéma', async () => {
     const w = await mountHome()
     expect(w.find('.filters button').exists()).toBe(false)
     await choose(w, 'Jour', '2026-11-02')
-    await choose(w, 'Heure', String(21 * 60))
+    await choose(w, 'Dès quelle heure', '21:00')
     expect(count(w)).toBe('0 film')
     expect(w.text()).toContain('Aucun film ne correspond à ces critères.')
     await w.find('.filters button').trigger('click')
@@ -196,7 +208,7 @@ describe('HomeView', () => {
     const items = w.findAll('.coming-soon li')
     expect(items.map((li) => li.find('.title').text())).toEqual(['Zootopie 2', 'Sans affiche'])
     expect(items[0].find('.sub').text()).toBe('Sortie le 26 novembre')
-    expect(items[0].find('a').attributes('href')).toBe('https://www.themoviedb.org/movie/42')
+    expect(items[0].find('a').attributes('href')).toBe('/movies/tmdb/42')
     expect(items[1].find('.no-poster').exists()).toBe(true)
   })
 

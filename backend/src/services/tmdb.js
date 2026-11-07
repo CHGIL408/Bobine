@@ -21,11 +21,22 @@ const pickTrailer = (videos = []) => {
   )?.key ?? null;
 };
 
+// Sortie en salle (type 3, sinon 2 = limitée) au Canada, sinon aux États-Unis (même date presque toujours, et TMDB a
+// souvent l'une sans l'autre), sinon la date mondiale de TMDB
+const canadianRelease = (releaseDates, fallback) => {
+  const first = (country, type) =>
+    (releaseDates?.results?.find((r) => r.iso_3166_1 === country)?.release_dates ?? [])
+      .filter((d) => d.type === type && d.release_date)
+      .map((d) => d.release_date.slice(0, 10))
+      .sort()[0];
+  return first('CA', 3) ?? first('CA', 2) ?? first('US', 3) ?? first('US', 2) ?? fallback;
+};
+
 const getMovieById = async (tmdbId) => {
   const response = await tmdbApi.get(`/movie/${tmdbId}`, {
     params: {
       language: 'fr-FR',
-      append_to_response: 'videos,credits',
+      append_to_response: 'videos,credits,release_dates',
       include_video_language: 'fr,en,null',
     },
   });
@@ -41,7 +52,7 @@ const getMovieById = async (tmdbId) => {
   return {
     title: movie.title,
     synopsis,
-    releaseDate: movie.release_date,
+    releaseDate: canadianRelease(movie.release_dates, movie.release_date),
     duration: movie.runtime,
     genre: movie.genres.map((g) => g.name),
     rating: movie.vote_average,
@@ -84,11 +95,20 @@ const getUpcomingMovies = async (now = new Date(), limit = 12) => {
   );
   const today = todayInQuebec(now);
   const seen = new Set();
-  return pages
+  const top = pages
     .flatMap((p) => p.data.results)
     .filter((m) => m.release_date > today && !seen.has(m.id) && seen.add(m.id))
     .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
-    .slice(0, limit)
+    .slice(0, limit);
+  // même date que la page du film (Canada, sinon États-Unis) ; échec TMDB : on garde la date de la liste
+  const dated = await Promise.all(
+    top.map(async (m) => {
+      const release_dates = await tmdbApi.get(`/movie/${m.id}/release_dates`).then((r) => r.data, () => null);
+      return { ...m, release_date: canadianRelease(release_dates, m.release_date) };
+    }),
+  );
+  return dated
+    .filter((m) => m.release_date > today)
     .sort((a, b) => a.release_date.localeCompare(b.release_date))
     .map((m) => ({
       tmdbId: m.id,

@@ -5,7 +5,9 @@
       <h1>À l'affiche</h1>
       <p v-if="status === 'ready'" class="subline">
         {{ countLabel(movies.length) }} · le mieux noté : {{ bestRated?.title ?? '—' }},
-        <span class="nowrap">{{ rating(bestRated?.rating) }}<template v-if="bestRated?.rating"> /10</template></span>
+        <span class="nowrap"
+          >{{ rating(bestRated?.rating) }}<template v-if="bestRated?.rating"> /10</template></span
+        >
       </p>
       <p v-else-if="status === 'loading'" class="subline" role="status">
         {{ slow ? SLOW_MESSAGE : 'Chargement des films…' }}
@@ -17,10 +19,10 @@
         <option value="">Cette semaine</option>
         <option v-for="day in days" :key="day.key" :value="day.key">{{ day.label }}</option>
       </select>
-      <select v-model.number="after" aria-label="Heure">
-        <option :value="0">Toute heure</option>
-        <option v-for="h in [17, 19, 21]" :key="h" :value="h * 60">Dès {{ h }} h</option>
-      </select>
+      <label class="time-filter">
+        Dès
+        <input v-model="after" type="time" aria-label="Dès quelle heure" />
+      </label>
       <select v-model="selectedCinema" aria-label="Cinéma">
         <option value="">Tous les cinémas</option>
         <option v-for="c in cinemas" :key="c._id" :value="c._id">{{ shortName(c.name) }}</option>
@@ -60,7 +62,9 @@
         <div v-else class="backdrop placeholder" aria-hidden="true"></div>
         <div class="lead-info">
           <h2>{{ lead.title }}</h2>
-          <p class="meta">{{ year(lead) }} · {{ duration(lead.duration) }} · {{ lead.genre.join(', ') }}</p>
+          <p class="meta">
+            {{ year(lead) }} · {{ duration(lead.duration) }} · {{ lead.genre.join(', ') }}
+          </p>
           <p class="rating num">
             {{ rating(lead.rating) }}<span v-if="lead.rating" class="unit"> /10</span>
           </p>
@@ -73,7 +77,10 @@
           <RouterLink :to="`/movies/${lead._id}`" class="primary">Voir les séances</RouterLink>
         </div>
       </template>
-      <p v-else-if="status === 'ready' && selectedGenre === FAVORITES && !favorites.ids.length" class="empty">
+      <p
+        v-else-if="status === 'ready' && selectedGenre === FAVORITES && !favorites.ids.length"
+        class="empty"
+      >
         Aucun favori pour l'instant. Ouvrez un film et touchez « Ajouter aux favoris ».
       </p>
       <p v-else-if="status === 'ready'" class="empty">Aucun film ne correspond à ces critères.</p>
@@ -96,7 +103,13 @@
 
         <div class="toolbar">
           <SearchBar @search="query = $event" />
-          <span v-if="status === 'ready'" class="count num">{{ countLabel(filteredMovies.length) }}</span>
+          <div v-if="status === 'ready'" class="toolbar-end">
+            <span class="count num">{{ countLabel(filteredMovies.length) }}</span>
+            <select v-model="sortBy" aria-label="Trier">
+              <option value="rating">Mieux notés</option>
+              <option value="title">De A à Z</option>
+            </select>
+          </div>
         </div>
 
         <ul v-if="status === 'loading'" class="skeleton-rows" aria-hidden="true">
@@ -105,7 +118,7 @@
             <span class="lines"><span class="bar w-40"></span><span class="bar w-25"></span></span>
           </li>
         </ul>
-        <table v-else-if="rest.length">
+        <table v-else-if="listMovies.length">
           <thead>
             <tr>
               <th colspan="2">Film</th>
@@ -115,23 +128,32 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="movie in rest" :key="movie._id">
+            <tr v-for="movie in listMovies" :key="movie._id">
               <td class="thumb">
-                <img v-if="imageOk(movie.poster)" :src="movie.poster" alt="" loading="lazy" @error="imageFailed(movie.poster)" />
+                <img
+                  v-if="imageOk(movie.poster)"
+                  :src="movie.poster"
+                  alt=""
+                  loading="lazy"
+                  @error="imageFailed(movie.poster)"
+                />
                 <span v-else class="thumb-ph" aria-hidden="true"></span>
               </td>
               <td class="identity">
                 <RouterLink :to="`/movies/${movie._id}`">{{ movie.title }}</RouterLink>
                 <span class="sub">{{ movie.genre.join(', ') }}</span>
-                <span class="sub phone-only num">{{ duration(movie.duration) }} · {{ nextTimes(movie) }}</span>
+                <span class="sub phone-only num"
+                  >{{ duration(movie.duration) }} · {{ nextTimes(movie) }}</span
+                >
               </td>
               <td class="times num">{{ nextTimes(movie) }}</td>
               <td class="num">{{ duration(movie.duration) }}</td>
-              <td class="num score">{{ rating(movie.rating) }}<span v-if="movie.rating" class="unit"> /10</span></td>
+              <td class="num score">
+                {{ rating(movie.rating) }}<span v-if="movie.rating" class="unit"> /10</span>
+              </td>
             </tr>
           </tbody>
         </table>
-        <p v-else-if="status === 'ready' && lead" class="empty">Aucun autre film dans cette sélection.</p>
       </section>
 
       <aside v-if="status !== 'error'" class="cinemas" aria-labelledby="cinemas-title">
@@ -140,7 +162,9 @@
           <RouterLink to="/cinemas" class="text-action">Tout voir</RouterLink>
         </div>
         <ul v-if="status === 'loading'" class="cinema-placeholders" aria-hidden="true">
-          <li v-for="n in 3" :key="n"><span class="bar w-60"></span><span class="bar w-80"></span></li>
+          <li v-for="n in 3" :key="n">
+            <span class="bar w-60"></span><span class="bar w-80"></span>
+          </li>
         </ul>
         <ul v-else>
           <li v-for="cinema in cinemas.slice(0, 4)" :key="cinema._id">
@@ -156,13 +180,18 @@
       <h2 id="coming-soon-title">Bientôt à l'affiche</h2>
       <ul>
         <li v-for="movie in comingSoonList" :key="movie.tmdbId">
-          <a :href="`https://www.themoviedb.org/movie/${movie.tmdbId}`" target="_blank" rel="noopener">
-            <img v-if="imageOk(movie.poster)" :src="movie.poster" alt="" loading="lazy" @error="imageFailed(movie.poster)" />
+          <RouterLink :to="`/movies/tmdb/${movie.tmdbId}`">
+            <img
+              v-if="imageOk(movie.poster)"
+              :src="movie.poster"
+              alt=""
+              loading="lazy"
+              @error="imageFailed(movie.poster)"
+            />
             <span v-else class="no-poster" aria-hidden="true"></span>
             <span class="title">{{ movie.title }}</span>
-            <span class="visually-hidden"> (fiche TMDB, nouvel onglet)</span>
-          </a>
-          <span class="sub">Sortie le {{ releaseDay(movie.releaseDate) }}</span>
+          </RouterLink>
+          <span class="sub">Sortie le {{ calendarDay(movie.releaseDate) }}</span>
         </li>
       </ul>
     </section>
@@ -175,7 +204,7 @@ import { onMounted, ref, computed } from 'vue'
 import { idOf, shortCinemaName as shortName } from '@/utils/cinemas'
 import { SLOW_MESSAGE, useSlowLoading } from '@/utils/slowLoading'
 import { getMovies, getCinemas, getUpcomingShowtimes, getComingSoon } from '../services/api.js'
-import { dayKey, dayLabel, minutesOfDay, timeWithFormat } from '@/utils/time'
+import { calendarDay, dayKey, dayLabel, minutesOfDay, timeWithFormat } from '@/utils/time'
 import SearchBar from '@/components/SearchBar.vue'
 import { useFavoritesStore } from '@/stores/favorites'
 
@@ -187,7 +216,8 @@ const query = ref('')
 const selectedGenre = ref('Tous')
 const showtimes = ref([])
 const selectedDay = ref('') // '' = toute la semaine, sinon "2026-11-01"
-const after = ref(0) // minutes depuis minuit
+const after = ref('') // "19:30" depuis le champ heure, '' = toute heure
+const sortBy = ref('rating')
 const selectedCinema = ref('')
 
 // Le backend gratuit dort quand personne ne l'utilise : après 3 s, on explique l'attente
@@ -226,19 +256,16 @@ const comingSoonList = computed(() => {
   const showing = new Set(movies.value.map((m) => m.tmdbId))
   return comingSoon.value.filter((m) => !showing.has(m.tmdbId))
 })
-// "2026-11-14" -> "14 novembre", lu comme une date locale (pas en UTC)
-const releaseDay = (iso) => {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })
-}
 
 const FAVORITES = 'Favoris' // toujours visible, pour qu'on sache que la fonction existe
 const genres = computed(() => ['Tous', FAVORITES, ...new Set(movies.value.flatMap((m) => m.genre))])
 
-const whenWhereSet = computed(() => Boolean(selectedDay.value || after.value || selectedCinema.value))
+const whenWhereSet = computed(() =>
+  Boolean(selectedDay.value || afterMinutes.value || selectedCinema.value),
+)
 const resetWhenWhere = () => {
   selectedDay.value = ''
-  after.value = 0
+  after.value = ''
   selectedCinema.value = ''
 }
 
@@ -249,13 +276,18 @@ const days = computed(() =>
 )
 
 // Séances à venir qui respectent jour, heure et cinéma, groupées par film (déjà triées par date)
+const afterMinutes = computed(() => {
+  if (!after.value) return 0
+  const [h, m] = after.value.split(':').map(Number)
+  return h * 60 + m
+})
 const matchingByMovie = computed(() => {
   const now = new Date()
   const byMovie = new Map()
   for (const s of showtimes.value) {
     if (new Date(s.datetime) < now) continue
     if (selectedDay.value && dayKey(new Date(s.datetime)) !== selectedDay.value) continue
-    if (after.value && minutesOfDay(s.datetime) < after.value) continue
+    if (afterMinutes.value && minutesOfDay(s.datetime) < afterMinutes.value) continue
     if (selectedCinema.value && idOf(s.cinema) !== selectedCinema.value) continue
     const id = idOf(s.movie)
     if (!byMovie.has(id)) byMovie.set(id, [])
@@ -272,16 +304,23 @@ const filteredMovies = computed(() => {
       (m) =>
         m.title.toLowerCase().includes(q) &&
         (selectedGenre.value === 'Tous' ||
-          (selectedGenre.value === FAVORITES ? favorites.has(m._id) : m.genre.includes(selectedGenre.value))) &&
+          (selectedGenre.value === FAVORITES
+            ? favorites.has(m._id)
+            : m.genre.includes(selectedGenre.value))) &&
         (!whenWhereSet.value || matching(m).length > 0),
     )
     .toSorted((a, b) => b.rating - a.rating)
 })
 
 const bestRated = computed(() => movies.value.toSorted((a, b) => b.rating - a.rating)[0])
+// la vedette reste le mieux noté, quel que soit le tri de la liste
 const lead = computed(() => filteredMovies.value[0])
+const listMovies = computed(() =>
+  sortBy.value === 'title'
+    ? filteredMovies.value.toSorted((a, b) => a.title.localeCompare(b.title, 'fr'))
+    : filteredMovies.value,
+)
 const leadImage = computed(() => [hiRes(lead.value?.backdrop), lead.value?.poster].find(imageOk))
-const rest = computed(() => filteredMovies.value.slice(1))
 
 const cinemaName = (id) => shortName(cinemas.value.find((c) => c._id === id)?.name ?? '')
 
@@ -289,7 +328,10 @@ const cinemaName = (id) => shortName(cinemas.value.find((c) => c._id === id)?.na
 const nextOf = (movie) => {
   const s = matching(movie)[0]
   if (!s) return null
-  return { when: `${dayLabel(dayKey(new Date(s.datetime)))} ${timeWithFormat(s)}`, where: cinemaName(idOf(s.cinema)) }
+  return {
+    when: `${dayLabel(dayKey(new Date(s.datetime)))} ${timeWithFormat(s)}`,
+    where: cinemaName(idOf(s.cinema)),
+  }
 }
 
 // "Aujourd'hui 16 h 30, 19 h 30 IMAX, 21 h 35" : les 3 premières heures du premier jour qui correspond
@@ -356,7 +398,9 @@ th {
   margin-bottom: var(--gap);
 }
 
-.filters select {
+/* pas « .toolbar input » : la règle toucherait le champ de SearchBar (Vue scope seulement .toolbar) */
+.filters :is(select, input),
+.toolbar select {
   height: var(--control-height);
   padding: 0 34px 0 14px;
   background-color: var(--surface);
@@ -368,13 +412,34 @@ th {
   transition: border-color 150ms ease;
 }
 
+.filters input {
+  padding: 0 14px;
+  cursor: text;
+  color-scheme: dark;
+}
+
+.time-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.toolbar-end {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .filters select:hover {
+  .filters :is(select, input):hover,
+  .toolbar select:hover {
     border-color: var(--faint);
   }
 }
 
-.filters select:focus-visible {
+.filters :is(select, input):focus-visible,
+.toolbar select:focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 2px;
 }
@@ -477,7 +542,9 @@ img.backdrop.loaded {
   color: var(--on-light);
   font-weight: 500;
   text-decoration: none;
-  transition: transform 160ms var(--ease-out), background 150ms ease;
+  transition:
+    transform 160ms var(--ease-out),
+    background 150ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -914,8 +981,14 @@ a:focus-visible {
     display: none;
   }
 
-  .filters select {
+  .filters select,
+  .time-filter {
     flex: 1 1 calc(50% - 5px);
+    min-width: 0;
+  }
+
+  .time-filter input {
+    flex: 1;
     min-width: 0;
   }
 

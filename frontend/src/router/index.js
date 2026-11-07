@@ -18,6 +18,12 @@ const router = createRouter({
       component: () => import('../views/MovieView.vue'),
     },
     {
+      path: '/movies/tmdb/:tmdbId', // prochaine sortie, pas encore en base
+      name: 'upcoming-movie',
+      meta: { title: 'Film' },
+      component: () => import('../views/MovieView.vue'),
+    },
+    {
       path: '/ce-soir',
       name: 'tonight',
       meta: { title: 'Ce soir' },

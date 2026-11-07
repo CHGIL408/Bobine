@@ -7,10 +7,10 @@ Application web de cinéma : films à l'affiche, cinémas de Québec et leurs s�
 
 ## Fonctionnalités
 
-- Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette avec sa prochaine séance, filtres par jour, heure (dès 17 h, 19 h, 21 h) et cinéma, recherche et filtre par genre, prochaines heures de chaque film avec leur format de salle (« STD » quand il n'est pas précisé), les cinémas
-- « Bientôt à l'affiche » sur l'accueil : les 12 prochaines sorties au Canada les plus attendues selon TMDB, avec affiche et date de sortie (lien vers la fiche TMDB) ; les films qui ont déjà des séances n'y sont pas ; liste gardée 6 h par le serveur pour limiter les appels à TMDB
+- Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette avec sa prochaine séance (et aussi en tête de la liste), filtres par jour, heure (dès une heure précise, au choix) et cinéma, recherche et filtre par genre, liste triée par note ou de A à Z, prochaines heures de chaque film avec leur format de salle (« STD » quand il n'est pas précisé), les cinémas
+- « Bientôt à l'affiche » sur l'accueil : les 12 prochaines sorties au Canada les plus attendues selon TMDB, avec affiche et date de sortie (la même règle que la page du film : Canada, sinon États-Unis) ; chaque film ouvre sa page sur le site (résumé, bande-annonce, date de sortie au Canada ; pas de favori ni de séances avant sa sortie) ; les films qui ont déjà des séances n'y sont pas ; liste gardée 6 h par le serveur pour limiter les appels à TMDB
 - Favoris : un bouton sur la page d'un film, et un onglet « Favoris » toujours présent sur l'accueil ; gardés dans le navigateur (pas de compte)
-- Page d'un film : fiche avec réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec) ; chaque heure s'ajoute à l'agenda (fichier `.ics`, fin estimée : durée du film + 15 min de bandes-annonces) ; lien « Réserver » vers le site du cinéma ; bouton « Partager » (menu du téléphone, sinon copie du lien)
+- Page d'un film : fiche avec date de sortie en salle au Canada (sinon la date mondiale de TMDB), réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec) ; chaque heure s'ajoute à l'agenda (fichier `.ics`, fin estimée : durée du film + 15 min de bandes-annonces) ; lien « Réserver » vers le site du cinéma ; bouton « Partager » (menu du téléphone, sinon copie du lien)
 - Page « Ce soir » (`/ce-soir`) : toutes les séances de maintenant à minuit, tous cinémas confondus, triées par heure et regroupées par heure, avec cinéma et format ; les séances commencées depuis 15 min au plus restent affichées (« A commencé il y a 12 min ») ; filtre par cinéma ; quand il ne reste rien ce soir, les premières séances de demain ; une page restée ouverte passé minuit recharge et montre la nouvelle journée
 - Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire, lien vers la page du cinéma sur cineplex.com et les affiches des films encore à l'affiche aujourd'hui (les heures sont sur la page du film), ou la prochaine séance ; bouton « Trier par distance » (position demandée au navigateur en haute précision, jamais envoyée au serveur ; avertissement si elle n'est connue qu'à plus de 2 km près, par exemple localisée par l'adresse IP ; coordonnées des cinémas vérifiées sur OpenStreetMap)
 - Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB (fiche en français, résumé anglais si le français manque)
@@ -60,7 +60,7 @@ npm install
 npm run dev            # http://localhost:5173
 ```
 
-Le frontend appelle par défaut l'API déployée (`https://bobine-backend.onrender.com/api`). Pour utiliser le backend local, changer `baseURL` dans `frontend/src/services/api.js` en `http://localhost:3000/api`.
+Le frontend appelle par défaut l'API déployée (`https://bobine-backend.onrender.com/api`). Pour utiliser le backend local, créer `frontend/.env.local` avec `VITE_API_URL=http://localhost:3000/api` (fichier ignoré par git), puis relancer `npm run dev`.
 
 ## Séances automatiques
 
@@ -86,6 +86,7 @@ Le champ `website` d'un cinéma doit commencer par `http://` ou `https://` (sino
 |---------|-----------------------|-----------------------------------------|
 | GET     | `/api/movies`         | Liste des films (`?showing=true` : seulement ceux qui ont une séance à venir) |
 | GET     | `/api/movies/upcoming` | Prochaines sorties au Canada (TMDB, en cache 6 h) |
+| GET     | `/api/movies/tmdb/:tmdbId` | Fiche d'une prochaine sortie lue chez TMDB (en cache 6 h) ; la fiche de la base si le film y est déjà ; 400 si l'id n'est pas un entier, 404 si TMDB ne le connaît pas |
 | GET     | `/api/movies/:id`     | Détail d'un film                        |
 | POST    | `/api/movies`         | Ajoute un film (`{ "tmdbId": 693134 }`) |
 | DELETE  | `/api/movies/:id`     | Supprime un film et ses séances         |

@@ -145,6 +145,25 @@ test('GET /movies/upcoming renvoie les prochaines sorties et les garde en cache'
   assert.strictEqual(upcoming.mock.callCount(), 1);
 });
 
+test('GET /movies/tmdb/:id lit la fiche chez TMDB une fois, ou renvoie celle de la base', async (t) => {
+  const findOne = t.mock.method(Movie, 'findOne', async () => null);
+  const fetchTmdb = t.mock.method(tmdb, 'getMovieById', async (id) => ({ title: `Bientôt ${id}` }));
+  const res = await fetch(`${base}/movies/tmdb/4242`);
+  assert.strictEqual(res.status, 200);
+  assert.deepStrictEqual(await res.json(), { tmdbId: 4242, title: 'Bientôt 4242' });
+  await fetch(`${base}/movies/tmdb/4242`);
+  assert.strictEqual(fetchTmdb.mock.callCount(), 1);
+  assert.deepStrictEqual(findOne.mock.calls[0].arguments[0], { tmdbId: 4242 });
+
+  findOne.mock.mockImplementation(async () => ({ _id: 'm1', tmdbId: 7 }));
+  assert.deepStrictEqual(await (await fetch(`${base}/movies/tmdb/7`)).json(), { _id: 'm1', tmdbId: 7 });
+
+  assert.strictEqual((await fetch(`${base}/movies/tmdb/abc`)).status, 400);
+  fetchTmdb.mock.mockImplementation(async () => { throw Object.assign(new Error('absent'), { response: { status: 404 } }); });
+  findOne.mock.mockImplementation(async () => null);
+  assert.strictEqual((await fetch(`${base}/movies/tmdb/999999999`)).status, 404);
+});
+
 test('GET /movies/upcoming répond 502 si TMDB échoue', async (t) => {
   movieRoutes.resetUpcomingCache();
   t.mock.method(tmdb, 'getUpcomingMovies', async () => { throw new Error('TMDB indisponible'); });

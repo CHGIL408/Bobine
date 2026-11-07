@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import MovieView from '../MovieView.vue'
-import { getMovie, getShowtimes } from '@/services/api'
+import { getMovie, getShowtimes, getTmdbMovie } from '@/services/api'
 
-vi.mock('@/services/api', () => ({ getMovie: vi.fn(), getShowtimes: vi.fn() }))
+vi.mock('@/services/api', () => ({ getMovie: vi.fn(), getShowtimes: vi.fn(), getTmdbMovie: vi.fn() }))
 const router = { back: vi.fn(), push: vi.fn() }
-vi.mock('vue-router', () => ({ useRoute: () => ({ params: { id: 're' } }), useRouter: () => router }))
+const route = { params: { id: 're' } }
+vi.mock('vue-router', () => ({ useRoute: () => route, useRouter: () => router }))
 
 const BEAUPORT = { _id: 'b', name: 'Cinéma Cineplex Odeon Beauport', address: '825 Rue Clemenceau', city: 'Québec' }
 const IMAX = { _id: 'i', name: 'Cinéma Cineplex IMAX aux Galeries de la Capitale', address: '5401 Boul. des Galeries', city: 'Québec', website: 'https://www.cineplex.com' }
@@ -39,6 +40,7 @@ describe('MovieView', () => {
     vi.setSystemTime(new Date(at('2026-11-01T15:00:00')))
     getMovie.mockReset().mockResolvedValue(MOVIE)
     getShowtimes.mockReset().mockResolvedValue(SHOWTIMES)
+    route.params = { id: 're' }
   })
   afterEach(() => {
     vi.useRealTimers()
@@ -48,9 +50,36 @@ describe('MovieView', () => {
   it('affiche la fiche du film', async () => {
     const w = await mountView()
     expect(w.find('h1').text()).toBe('Resident Evil')
-    expect(w.find('.meta').text()).toBe('2026 · 1 h 35 · Horreur')
+    expect(w.find('.meta').text()).toBe('Sortie au Canada le 18 septembre 2026 · 1 h 35 · Horreur')
     expect(w.find('.rating').text()).toBe('7,3 /10')
     expect(document.title).toBe('Resident Evil · Bobine')
+  })
+
+  it('affiche une prochaine sortie depuis TMDB, sans séances ni favori', async () => {
+    route.params = { tmdbId: '42' }
+    getTmdbMovie.mockReset().mockResolvedValue({ tmdbId: 42, title: 'Zootopie 2', genre: [], releaseDate: '2026-11-26', trailerKey: 'k' })
+    const w = await mountView()
+    expect(getTmdbMovie).toHaveBeenCalledWith('42')
+    expect(getShowtimes).not.toHaveBeenCalled()
+    expect(w.find('.meta').text()).toContain('Sortie au Canada le 26 novembre 2026')
+    expect(w.find('.fav').exists()).toBe(false)
+    expect(w.find('.primary').text()).toBe('Voir la bande-annonce')
+    expect(w.text()).toContain('Pas encore de séances')
+  })
+
+  it('ne dit pas « pas encore sorti » quand la date de sortie est passée', async () => {
+    route.params = { tmdbId: '43' }
+    getTmdbMovie.mockReset().mockResolvedValue({ tmdbId: 43, title: 'Sorti ailleurs', genre: [], releaseDate: '2026-10-01' })
+    const w = await mountView()
+    expect(w.text()).toContain('Aucune séance prévue pour ce film dans nos cinémas.')
+  })
+
+  it('montre les séances quand la prochaine sortie est entre-temps en base', async () => {
+    route.params = { tmdbId: '42' }
+    getTmdbMovie.mockReset().mockResolvedValue(MOVIE)
+    const w = await mountView()
+    expect(getShowtimes).toHaveBeenCalledWith('re')
+    expect(w.findAll('.tabs button').length).toBe(2)
   })
 
   it('groupe les séances à venir par jour, puis par cinéma, sans les passées', async () => {

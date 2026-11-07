@@ -34,6 +34,26 @@ router.get('/', async (req, res) => {
   }
 });
 
+// FICHE D'UN FILM PAS ENCORE EN BASE (prochaines sorties), lue chez TMDB et gardée 6 h en mémoire ;
+// déjà en base (il a des séances) : la fiche de la base, avec son _id
+const tmdbCache = new Map(); // tmdbId -> { at, movie }
+router.get('/tmdb/:tmdbId', async (req, res) => {
+  const tmdbId = Number(req.params.tmdbId);
+  if (!Number.isInteger(tmdbId) || tmdbId <= 0) return res.status(400).json({ error: 'tmdbId invalide' });
+  try {
+    const existing = await Movie.findOne({ tmdbId });
+    if (existing) return res.json(existing);
+    const hit = tmdbCache.get(tmdbId);
+    if (hit && Date.now() - hit.at < UPCOMING_TTL) return res.json(hit.movie);
+    if (tmdbCache.size >= 500) tmdbCache.clear(); // borne la mémoire si on visite beaucoup d'ids différents
+    const movie = { tmdbId, ...(await tmdb.getMovieById(tmdbId)) };
+    tmdbCache.set(tmdbId, { at: Date.now(), movie });
+    res.json(movie);
+  } catch (err) {
+    res.status(err.response?.status === 404 ? 404 : 502).json({ error: err.message });
+  }
+});
+
 // GET UN FILM
 router.get('/:id', async (req, res) => {
   try {
