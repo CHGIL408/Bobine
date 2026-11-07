@@ -1,56 +1,113 @@
 # Bobine
 
-Application web de cinéma : films à l'affiche, cinémas de Québec et leurs séances.
+[![Tests](https://github.com/CHGIL408/Bobine/actions/workflows/tests.yml/badge.svg)](https://github.com/CHGIL408/Bobine/actions/workflows/tests.yml)
+[![Synchronisation des séances](https://github.com/CHGIL408/Bobine/actions/workflows/sync-showtimes.yml/badge.svg)](https://github.com/CHGIL408/Bobine/actions/workflows/sync-showtimes.yml)
 
-- **Frontend** : Vue 3, Vite, Vue Router, Pinia, Axios
-- **Backend** : Node.js, Express 5, MongoDB (Mongoose), API TMDB pour les fiches de films, SerpApi pour les horaires
+**Bobine** est une application web qui rassemble les films à l'affiche et les séances des cinémas de Québec. Les horaires sont synchronisés chaque jour depuis Google, et les fiches de films viennent de TMDB.
+
+## Sommaire
+
+- [Fonctionnalités](#fonctionnalités)
+- [Stack technique](#stack-technique)
+- [Architecture](#architecture)
+- [Démarrage rapide](#démarrage-rapide)
+- [Configuration](#configuration)
+- [Synchronisation des séances](#synchronisation-des-séances)
+- [API REST](#api-rest)
+- [Tests et qualité](#tests-et-qualité)
+- [Scripts](#scripts)
 
 ## Fonctionnalités
 
-- Page d'accueil : les films qui ont une séance à venir, le mieux noté en vedette avec sa prochaine séance (et aussi en tête de la liste), filtres par jour, heure (dès une heure précise, au choix) et cinéma, recherche et filtre par genre, liste triée par note ou de A à Z, prochaines heures de chaque film avec leur format de salle (« STD » quand il n'est pas précisé), les cinémas
-- « Bientôt à l'affiche » sur l'accueil : les 12 prochaines sorties au Canada les plus attendues selon TMDB, avec affiche et date de sortie (la même règle que la page du film : Canada, sinon États-Unis) ; chaque film ouvre sa page sur le site (résumé, bande-annonce, date de sortie au Canada ; pas de favori ni de séances avant sa sortie) ; les films qui ont déjà des séances n'y sont pas ; liste gardée 6 h par le serveur pour limiter les appels à TMDB
-- Favoris : un bouton sur la page d'un film, et un onglet « Favoris » toujours présent sur l'accueil ; gardés dans le navigateur (pas de compte)
-- Page d'un film : fiche avec date de sortie en salle au Canada (sinon la date mondiale de TMDB), réalisation et distribution, bande-annonce YouTube (chargée au clic), séances à venir par jour puis par cinéma (heure de Québec) ; chaque heure s'ajoute à l'agenda (fichier `.ics`, fin estimée : durée du film + 15 min de bandes-annonces) ; lien « Réserver » vers le site du cinéma ; bouton « Partager » (menu du téléphone, sinon copie du lien)
-- Page « Ce soir » (`/ce-soir`) : toutes les séances de maintenant à minuit, tous cinémas confondus, triées par heure et regroupées par heure, avec cinéma et format ; les séances commencées depuis 15 min au plus restent affichées (« A commencé il y a 12 min ») ; filtre par cinéma ; quand il ne reste rien ce soir, les premières séances de demain ; une page restée ouverte passé minuit recharge et montre la nouvelle journée
-- Page cinémas : Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale, Cineplex Odeon Ste-Foy, avec itinéraire, lien vers la page du cinéma sur cineplex.com et les affiches des films encore à l'affiche aujourd'hui (les heures sont sur la page du film), ou la prochaine séance ; bouton « Trier par distance » (position demandée au navigateur en haute précision, jamais envoyée au serveur ; avertissement si elle n'est connue qu'à plus de 2 km près, par exemple localisée par l'adresse IP ; coordonnées des cinémas vérifiées sur OpenStreetMap)
-- Séances récupérées chaque jour depuis Google (via SerpApi) ; les films manquants sont créés depuis TMDB (fiche en français, résumé anglais si le français manque)
-- Page `/admin` (non liée dans le menu) : saisir la clé `ADMIN_API_KEY` (gardée seulement dans l'onglet), ajouter un film par son identifiant TMDB, supprimer un film et ses séances
-- Ajout d'un film à partir de son identifiant TMDB (titre, synopsis, affiche, note… récupérés automatiquement), protégé par clé API
+### Accueil
+- Films ayant au moins une séance à venir. Le mieux noté est mis en vedette avec sa prochaine séance, et il figure aussi en tête de la liste.
+- Filtres par jour, par heure (à partir d'une heure précise) et par cinéma. Recherche par titre et filtre par genre.
+- Tri de la liste par note ou de A à Z.
+- Prochaines heures de chaque film avec le format de salle (« STD » quand il n'est pas précisé).
+- **Bientôt à l'affiche** : les 12 prochaines sorties au Canada les plus attendues selon TMDB.
+  - Chaque film ouvre sa propre page sur le site : résumé, bande-annonce et date de sortie, sans favori ni séances avant sa sortie.
+  - Les films qui ont déjà des séances sont exclus.
+  - La liste est gardée 6 h en cache côté serveur.
 
-## Structure
+### Page d'un film
+- Fiche complète : date de sortie en salle au Canada, réalisation, distribution, note et résumé.
+- Bande-annonce YouTube, chargée au clic via `youtube-nocookie`.
+- Séances à venir groupées par jour puis par cinéma, à l'heure de Québec.
+- Ajout d'une séance à l'agenda par un fichier `.ics`. La fin est estimée à la durée du film plus 15 min de bandes-annonces.
+- Lien **Réserver** vers le site du cinéma et bouton **Partager** (menu natif du téléphone, sinon copie du lien).
+
+### Ce soir (`/ce-soir`)
+- Toutes les séances de maintenant à minuit, tous cinémas confondus, regroupées par heure.
+- Les séances commencées depuis 15 min au plus restent visibles (« A commencé il y a 12 min »).
+- Filtre par cinéma. S'il ne reste rien ce soir, les premières séances du lendemain s'affichent.
+- Une page restée ouverte après minuit se met à jour toute seule.
+
+### Cinémas
+- Cineplex Odeon Beauport, Cineplex IMAX aux Galeries de la Capitale et Cineplex Odeon Ste-Foy.
+- Itinéraire, lien vers cineplex.com et affiches des films à l'affiche aujourd'hui, ou à défaut la prochaine séance.
+- **Trier par distance** :
+  - La position est demandée au navigateur et n'est jamais envoyée au serveur.
+  - Un avertissement s'affiche si elle n'est connue qu'à plus de 2 km près.
+  - Les coordonnées des cinémas ont été vérifiées sur OpenStreetMap.
+
+### Favoris
+- Bouton sur la page d'un film et onglet **Favoris** sur l'accueil.
+- Gardés dans le navigateur (`localStorage`), sans compte.
+
+### Administration (`/admin`)
+- Page non liée dans le menu, protégée par la clé `ADMIN_API_KEY`. La clé n'est gardée que dans l'onglet ouvert.
+- Ajout d'un film par son identifiant TMDB : titre, résumé, affiche et note sont récupérés automatiquement.
+- Suppression d'un film et de ses séances.
+
+## Stack technique
+
+| Couche       | Technologies                                                                 |
+|--------------|------------------------------------------------------------------------------|
+| Frontend     | Vue 3 (Composition API), Vite, Vue Router, Pinia, Axios                      |
+| Backend      | Node.js, Express 5, MongoDB avec Mongoose                                    |
+| Données      | [TMDB](https://www.themoviedb.org) pour les fiches, [SerpApi](https://serpapi.com) pour les horaires Google |
+| Tests        | Vitest et Vue Test Utils (frontend), `node:test` (backend)                   |
+| CI/CD        | GitHub Actions : tests à chaque push, synchronisation quotidienne des séances |
+| Hébergement  | API sur Render                                                               |
+
+## Architecture
 
 ```
-backend/            API REST Express + MongoDB
-  src/syncShowtimes.js  Synchronisation des séances (SerpApi + TMDB)
-frontend/           Application Vue 3
-.github/workflows/  Tâche quotidienne de synchronisation des séances
+backend/
+  src/
+    models/            Schémas Mongoose (films, cinémas, séances)
+    routes/            Routes REST
+    services/tmdb.js   Client TMDB (fiches, date de sortie au Canada, prochaines sorties)
+    syncShowtimes.js   Synchronisation quotidienne des séances
+frontend/
+  src/
+    views/             Pages (accueil, film, ce soir, cinémas, administration)
+    components/        Composants partagés
+    stores/            État Pinia (favoris)
+    utils/             Dates à l'heure de Québec, agenda .ics, géolocalisation…
+.github/workflows/     Tests et synchronisation quotidienne
 ```
 
-## Installation
+**Date de sortie** : Bobine retient la sortie en salle au Canada. À défaut, elle prend celle des États-Unis, qui est presque toujours la même, puis la date mondiale de TMDB. La même règle sert pour la page d'un film et pour « Bientôt à l'affiche ».
 
-Prérequis : Node.js `^20.19.0` ou `>=22.12.0`, une base MongoDB, un jeton d'accès TMDB, une clé SerpApi (seulement pour synchroniser les séances).
+## Démarrage rapide
+
+**Prérequis** :
+- Node.js `^20.19.0` ou `>=22.12.0`
+- Une base MongoDB
+- Un jeton d'accès TMDB
+- Une clé SerpApi, seulement pour synchroniser les séances
 
 ### Backend
 
 ```sh
 cd backend
 npm install
-cp .env.example .env   # puis remplir les variables
-npm run seed           # optionnel : données de démo — ⚠ vide d'abord films, cinémas et séances
+cp .env.example .env   # puis remplir les variables (voir Configuration)
 npm run dev            # http://localhost:3000
 ```
 
-Variables du `.env` :
-
-| Variable          | Rôle                                                                                  |
-|-------------------|---------------------------------------------------------------------------------------|
-| `PORT`            | Port de l'API (3000 par défaut)                                                       |
-| `MONGODB_URI`     | Chaîne de connexion MongoDB, **avec le nom de la base** (`…mongodb.net/bobine?…`)     |
-| `TMDB_API_KEY`    | « API Read Access Token » de TMDB (la longue chaîne `eyJ…`), pas la courte « API Key » |
-| `SERPAPI_API_KEY` | Clé SerpApi, pour `npm run sync-showtimes`                                            |
-| `ADMIN_API_KEY`   | Clé exigée pour toute écriture (`POST`, `DELETE`) ; sans elle, les écritures sont refusées |
-
-Pour générer une clé : `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. À mettre aussi dans les variables d'environnement de Render.
+> `npm run seed` charge des données de démonstration. **Attention** : il vide d'abord les films, les cinémas et les séances.
 
 ### Frontend
 
@@ -60,72 +117,133 @@ npm install
 npm run dev            # http://localhost:5173
 ```
 
-Le frontend appelle par défaut l'API déployée (`https://bobine-backend.onrender.com/api`). Pour utiliser le backend local, créer `frontend/.env.local` avec `VITE_API_URL=http://localhost:3000/api` (fichier ignoré par git), puis relancer `npm run dev`.
-
-## Séances automatiques
-
-`npm run sync-showtimes` (dans `backend/`) fait une recherche Google par cinéma via [SerpApi](https://serpapi.com), lit les horaires des 7 prochains jours, retrouve chaque film sur TMDB (et le crée s'il n'est pas en base), puis remplace les séances à venir du cinéma (les doublons renvoyés par Google sont retirés). Les séances passées sont gardées ; si Google ne renvoie rien pour un cinéma, ses séances ne sont pas touchées. Les séances dont le film n'existe plus sont supprimées.
-
-La tâche GitHub Actions `.github/workflows/sync-showtimes.yml` la lance chaque jour vers 6 h (heure de Québec), et à la demande depuis l'onglet **Actions** (« Run workflow »). Elle a besoin de trois secrets dans **Settings > Secrets and variables > Actions > Repository secrets** : `MONGODB_URI`, `TMDB_API_KEY`, `SERPAPI_API_KEY`.
-
-Quota : une recherche SerpApi par cinéma et par exécution, soit environ 90 par mois pour 3 cinémas, sous les 250 du plan gratuit. Une recherche identique relancée dans l'heure sort du cache et n'est pas comptée.
-
-Limites connues : chaque titre Google est associé au premier résultat TMDB sorti dans les 18 derniers mois (sinon au premier résultat) ; une reprise d'un vieux film peut donc être associée à un film récent du même nom. Google ne donne ni prix ni places restantes, ni la langue (VO/VF) : seul le type de salle est gardé (Standard, IMAX, 3D, UltraAVX, ScreenX, DBOX).
-
-## API
-
-Les lectures (`GET`) sont publiques. Toute écriture exige le header `x-api-key` égal à `ADMIN_API_KEY` (sinon 401, ou 503 si la clé n'est pas configurée sur le serveur) :
+Par défaut, le frontend appelle l'API déployée (`https://bobine-backend.onrender.com/api`). Pour utiliser le backend local, créez `frontend/.env.local` (ignoré par git) :
 
 ```sh
-curl -X POST https://bobine-backend.onrender.com/api/movies -H "Content-Type: application/json" -H "x-api-key: $ADMIN_API_KEY" -d '{"tmdbId": 693134}'
+VITE_API_URL=http://localhost:3000/api
 ```
 
-Le champ `website` d'un cinéma doit commencer par `http://` ou `https://` (sinon 400) : un lien `javascript:` s'exécuterait au clic sur le site. Le site n'affiche de toute façon que les liens http(s).
+## Configuration
 
-| Méthode | Route                 | Description                             |
-|---------|-----------------------|-----------------------------------------|
-| GET     | `/api/movies`         | Liste des films (`?showing=true` : seulement ceux qui ont une séance à venir) |
-| GET     | `/api/movies/upcoming` | Prochaines sorties au Canada (TMDB, en cache 6 h) |
-| GET     | `/api/movies/tmdb/:tmdbId` | Fiche d'une prochaine sortie lue chez TMDB (en cache 6 h) ; la fiche de la base si le film y est déjà ; 400 si l'id n'est pas un entier, 404 si TMDB ne le connaît pas |
-| GET     | `/api/movies/:id`     | Détail d'un film                        |
-| POST    | `/api/movies`         | Ajoute un film (`{ "tmdbId": 693134 }`) |
-| DELETE  | `/api/movies/:id`     | Supprime un film et ses séances         |
-| GET     | `/api/cinemas`        | Liste des cinémas                       |
-| GET     | `/api/cinemas/:id`    | Détail d'un cinéma                      |
-| POST    | `/api/cinemas`        | Ajoute un cinéma                        |
-| GET     | `/api/showtimes`      | Liste des séances, triées par date. `?movie=<id>` : un seul film ; `?upcoming=true` : à venir seulement (`&since=15` : y compris celles commencées depuis 15 min au plus, 60 au maximum) ; `?populate=false` : ids du film et du cinéma au lieu des fiches complètes (liste légère) |
-| GET     | `/api/showtimes/:id`  | Détail d'une séance                     |
-| POST    | `/api/showtimes`      | Ajoute une séance                       |
-| DELETE  | `/api/showtimes/:id`  | Supprime une séance                     |
+Variables du fichier `backend/.env` :
 
-## Tests
+| Variable          | Rôle                                                                                         |
+|-------------------|----------------------------------------------------------------------------------------------|
+| `PORT`            | Port de l'API (3000 par défaut)                                                              |
+| `MONGODB_URI`     | Chaîne de connexion MongoDB, **avec le nom de la base** (`…mongodb.net/bobine?…`)            |
+| `TMDB_API_KEY`    | « API Read Access Token » de TMDB (la longue chaîne `eyJ…`), et non la courte « API Key »    |
+| `SERPAPI_API_KEY` | Clé SerpApi, utilisée par `npm run sync-showtimes`                                           |
+| `ADMIN_API_KEY`   | Clé exigée pour toute écriture (`POST`, `DELETE`). Sans elle, les écritures sont refusées   |
+
+Pour générer une clé d'administration :
 
 ```sh
-cd backend && npm test    # node:test — routes (dont suppression en cascade), clé API, service TMDB, lecture des horaires SerpApi
-cd frontend && npm test   # Vitest + Vue Test Utils — accueil (filtres jour, heure, cinéma, favoris), favoris, page film (séances, bande-annonce, agenda, favoris, partage, réservation), cinémas (films du jour, tri par distance), page « Ce soir » (fenêtre jusqu'à minuit, séances commencées, passage de minuit, filtre), fin de séance pour l'agenda, géolocalisation, administration, recherche, fichier .ics
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Pour tester l'affichage avec des données extrêmes (titres très longs, affiches cassées, liste vide, 300 séances), lancer `npm run dev` puis ajouter `?data=worst`, `empty`, `one` ou `huge` à l'adresse ; un sélecteur apparaît en bas de l'écran. Ces données (`frontend/src/dev/fixtures.js`) ne sont jamais incluses dans le build de production.
+En production, ces variables se définissent dans les variables d'environnement de Render.
 
-Les tests n'utilisent ni la base ni le réseau : les modèles Mongoose, axios et l'API du frontend sont simulés. Ils tournent sur GitHub à chaque push et pull request (`.github/workflows/tests.yml`, onglet **Actions**).
+## Synchronisation des séances
 
-## Scripts backend
+`npm run sync-showtimes` (dans `backend/`) fonctionne ainsi :
 
-| Commande                 | Rôle                                                  |
-|--------------------------|-------------------------------------------------------|
-| `npm run dev`            | Serveur avec rechargement automatique (nodemon)       |
-| `npm start`              | Serveur                                               |
-| `npm test`               | Tests unitaires                                       |
-| `npm run sync-showtimes` | Synchronise les séances depuis Google                 |
-| `npm run seed`           | Remplace **toutes** les données par les données de démo |
+1. Une recherche Google par cinéma via SerpApi donne les horaires des 7 prochains jours.
+2. Chaque titre est retrouvé sur TMDB. Le film est créé en base s'il n'y est pas encore : fiche en français, résumé anglais si le français manque.
+3. Les séances à venir du cinéma sont remplacées, sans les doublons renvoyés par Google.
 
-## Scripts frontend
+Règles de sécurité des données :
+- Les séances passées sont conservées.
+- Si Google ne renvoie rien pour un cinéma, ses séances restent intactes.
+- Les séances dont le film n'existe plus sont supprimées.
 
-| Commande          | Rôle                                |
-|-------------------|-------------------------------------|
-| `npm run dev`     | Serveur de développement            |
-| `npm test`        | Tests unitaires (Vitest)            |
-| `npm run build`   | Build de production                 |
-| `npm run preview` | Prévisualise le build               |
-| `npm run lint`    | Oxlint + ESLint                     |
-| `npm run format`  | Prettier                            |
+**Planification** : le workflow `.github/workflows/sync-showtimes.yml` s'exécute chaque jour vers 6 h (heure de Québec). Il peut aussi être lancé à la main depuis l'onglet **Actions** (« Run workflow »). Il a besoin des secrets `MONGODB_URI`, `TMDB_API_KEY` et `SERPAPI_API_KEY` dans **Settings › Secrets and variables › Actions**.
+
+**Quota** : une recherche SerpApi par cinéma et par exécution, soit environ 90 par mois pour 3 cinémas. C'est sous la limite de 250 du plan gratuit. Une recherche identique relancée dans l'heure sort du cache et n'est pas comptée.
+
+**Limites connues** :
+- Chaque titre Google est associé au premier résultat TMDB sorti dans les 18 derniers mois. Une reprise d'un vieux film peut donc être associée à un film récent du même nom.
+- Google ne fournit ni les prix, ni les places restantes, ni la langue (VO ou VF). Seul le type de salle est conservé : Standard, IMAX, 3D, UltraAVX, ScreenX ou DBOX.
+
+## API REST
+
+Les lectures (`GET`) sont publiques. Toute écriture exige l'en-tête `x-api-key` égal à `ADMIN_API_KEY`. Sans cet en-tête, l'API répond `401`, ou `503` si la clé n'est pas configurée sur le serveur.
+
+```sh
+curl -X POST https://bobine-backend.onrender.com/api/movies \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $ADMIN_API_KEY" \
+  -d '{"tmdbId": 693134}'
+```
+
+### Films
+
+| Méthode  | Route                      | Description                                                                 |
+|----------|----------------------------|-----------------------------------------------------------------------------|
+| `GET`    | `/api/movies`              | Liste des films. `?showing=true` : seulement ceux qui ont une séance à venir |
+| `GET`    | `/api/movies/upcoming`     | Prochaines sorties au Canada (TMDB, cache de 6 h)                           |
+| `GET`    | `/api/movies/tmdb/:tmdbId` | Fiche d'une prochaine sortie lue chez TMDB (cache de 6 h), ou la fiche en base si le film y est déjà. `400` si l'identifiant n'est pas un entier, `404` si TMDB ne le connaît pas |
+| `GET`    | `/api/movies/:id`          | Détail d'un film                                                            |
+| `POST`   | `/api/movies`              | Ajoute un film à partir de son identifiant TMDB : `{ "tmdbId": 693134 }`    |
+| `DELETE` | `/api/movies/:id`          | Supprime un film et ses séances                                             |
+
+### Cinémas
+
+| Méthode | Route              | Description                                                        |
+|---------|--------------------|--------------------------------------------------------------------|
+| `GET`   | `/api/cinemas`     | Liste des cinémas                                                  |
+| `GET`   | `/api/cinemas/:id` | Détail d'un cinéma                                                 |
+| `POST`  | `/api/cinemas`     | Ajoute un cinéma. `website` doit commencer par `http://` ou `https://`, sinon `400` |
+
+### Séances
+
+| Méthode  | Route                | Description                                    |
+|----------|----------------------|------------------------------------------------|
+| `GET`    | `/api/showtimes`     | Liste des séances triées par date (paramètres ci-dessous) |
+| `GET`    | `/api/showtimes/:id` | Détail d'une séance                            |
+| `POST`   | `/api/showtimes`     | Ajoute une séance                              |
+| `DELETE` | `/api/showtimes/:id` | Supprime une séance                            |
+
+Paramètres de `GET /api/showtimes` :
+
+| Paramètre         | Effet                                                                       |
+|-------------------|-----------------------------------------------------------------------------|
+| `movie=<id>`      | Séances d'un seul film                                                      |
+| `upcoming=true`   | Séances à venir seulement                                                   |
+| `since=<minutes>` | Avec `upcoming`, inclut les séances commencées depuis ce délai (60 au plus) |
+| `populate=false`  | Identifiants du film et du cinéma au lieu des fiches complètes              |
+
+## Tests et qualité
+
+```sh
+cd backend && npm test    # node:test : routes, clé API, service TMDB, lecture des horaires
+cd frontend && npm test   # Vitest : pages, favoris, agenda .ics, géolocalisation, recherche
+```
+
+- Les tests n'utilisent ni la base ni le réseau : les modèles Mongoose, axios et l'API du frontend sont simulés.
+- Ils s'exécutent sur GitHub Actions à chaque push et pull request (`.github/workflows/tests.yml`).
+- `npm run lint` (Oxlint et ESLint) et `npm run format` (Prettier) sont disponibles dans `frontend/`.
+
+**Données extrêmes** : en développement, ajoutez `?data=worst`, `empty`, `one` ou `huge` à l'adresse pour tester l'affichage avec des titres très longs, des affiches cassées, une liste vide ou 300 séances. Un sélecteur apparaît alors en bas de l'écran. Ces données (`frontend/src/dev/fixtures.js`) ne sont jamais incluses dans le build de production.
+
+## Scripts
+
+### Backend
+
+| Commande                 | Rôle                                                       |
+|--------------------------|------------------------------------------------------------|
+| `npm run dev`            | Serveur avec rechargement automatique (nodemon)            |
+| `npm start`              | Serveur de production                                      |
+| `npm test`               | Tests unitaires                                            |
+| `npm run sync-showtimes` | Synchronise les séances depuis Google                      |
+| `npm run seed`           | Remplace **toutes** les données par les données de démo    |
+
+### Frontend
+
+| Commande          | Rôle                          |
+|-------------------|-------------------------------|
+| `npm run dev`     | Serveur de développement      |
+| `npm test`        | Tests unitaires (Vitest)      |
+| `npm run build`   | Build de production           |
+| `npm run preview` | Prévisualisation du build     |
+| `npm run lint`    | Oxlint et ESLint              |
+| `npm run format`  | Prettier                      |
