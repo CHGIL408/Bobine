@@ -32,9 +32,11 @@ const SHOWTIMES = [
   { _id: 's7', movie: 'dune', cinema: 'c1', datetime: at('2026-11-03T20:00:00') },
 ]
 
+const push = vi.fn()
 const mountHome = async () => {
   const wrapper = mount(HomeView, {
     global: {
+      mocks: { $router: { push } },
       plugins: [createPinia()],
       stubs: { RouterLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } },
     },
@@ -70,6 +72,13 @@ describe('HomeView', () => {
     expect(w.find('.feature a').attributes('href')).toBe('/movies/inc')
     expect(rowTitles(w)).toEqual(['Inception', 'Dune : Deuxième partie', 'Oppenheimer']) // la vedette reste dans la liste
     expect(getMovies).toHaveBeenCalledWith({ showing: true })
+  })
+
+  it('ouvre le film quand on touche n’importe où sur la ligne', async () => {
+    const w = await mountHome()
+    push.mockClear()
+    await w.findAll('tbody tr')[1].find('td.score').trigger('click')
+    expect(push).toHaveBeenCalledWith('/movies/dune')
   })
 
   it('formate note et durée à la française, avec un tiret si absent', async () => {

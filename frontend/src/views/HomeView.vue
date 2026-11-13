@@ -128,7 +128,12 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="movie in listMovies" :key="movie._id">
+            <!-- toute la ligne ouvre le film ; le lien reste pour le clavier et les lecteurs d'écran -->
+            <tr
+              v-for="movie in listMovies"
+              :key="movie._id"
+              @click="$router.push(`/movies/${movie._id}`)"
+            >
               <td class="thumb">
                 <img
                   v-if="imageOk(movie.poster)"
@@ -632,8 +637,8 @@ td.num {
 }
 
 tbody tr {
-  position: relative;
   border-top: 1px solid var(--border);
+  cursor: pointer;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -643,7 +648,7 @@ tbody tr {
 }
 
 /* toute la ligne est cliquable : toute la ligne répond à l'appui */
-tbody tr:has(a:active) {
+tbody tr:active {
   background: var(--surface);
 }
 
@@ -696,13 +701,8 @@ th:last-child {
   text-decoration: none;
 }
 
-/* the whole row opens the film */
-.identity a::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-}
-
+/* pas de lien étiré (::after en absolute) : Safari ignore position: relative sur <tr>,
+   le calque couvrait alors la page entière, filtres compris */
 .identity a:focus-visible {
   outline: none;
 }
