@@ -140,8 +140,10 @@ describe('MovieView', () => {
     await fav.trigger('click')
     expect(fav.text()).toBe('Dans mes favoris')
     expect(fav.attributes('aria-pressed')).toBe('true')
+    expect(fav.classes()).toContain('pop') // le cœur rebondit à l'ajout…
     await fav.trigger('click')
     expect(fav.text()).toBe('Ajouter aux favoris')
+    expect(fav.classes()).not.toContain('pop') // …pas au retrait
   })
 
   it('partage avec le menu du téléphone quand il existe', async () => {

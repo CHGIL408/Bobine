@@ -9,10 +9,21 @@
 
     <template v-else>
       <section class="film" aria-labelledby="film-title">
-        <img v-if="imageOk(movie.poster)" class="poster" :src="movie.poster" alt="" @error="imageFailed(movie.poster)" />
+        <img
+          v-if="imageOk(movie.poster)"
+          class="poster"
+          :src="movie.poster"
+          alt=""
+          @load="$event.target.classList.add('loaded')"
+          @error="imageFailed(movie.poster)"
+        />
         <div v-else class="poster" aria-hidden="true"></div>
         <div class="info">
-          <h1 id="film-title">{{ movie.title ?? 'Chargement…' }}</h1>
+          <h1 id="film-title">
+            <template v-if="movie.title">{{ movie.title }}</template>
+            <!-- chargement : la forme du titre plutôt qu'un texte qui saute vers le vrai nom -->
+            <template v-else><span class="bar" aria-hidden="true"></span><span class="visually-hidden">Chargement…</span></template>
+          </h1>
           <p v-if="movie.title" class="meta num">
             {{ releaseLabel }} · {{ duration }} · {{ movie.genre?.join(', ') || '—' }}
           </p>
@@ -44,8 +55,9 @@
               v-if="movie._id"
               type="button"
               class="secondary fav"
+              :class="{ pop: justAdded }"
               :aria-pressed="favorites.has(movie._id)"
-              @click="favorites.toggle(movie._id)"
+              @click="toggleFavorite"
             >
               <svg viewBox="0 0 16 16" aria-hidden="true">
                 <path
@@ -158,6 +170,12 @@ const backToList = () => {
   else router.push('/')
 }
 const favorites = useFavoritesStore()
+// le cœur rebondit seulement quand on vient d'ajouter le film, pas au chargement de la page ni au retrait
+const justAdded = ref(false)
+const toggleFavorite = () => {
+  favorites.toggle(movie.value._id)
+  justAdded.value = favorites.has(movie.value._id)
+}
 const movie = ref({})
 const showtimes = ref([])
 const status = ref('loading')
@@ -323,6 +341,25 @@ p {
   padding: var(--pad);
   background: var(--surface);
   border-radius: var(--radius-card);
+}
+
+.bar {
+  display: block;
+  width: 70%;
+  height: 24px;
+  margin: 4px 0;
+  border-radius: 6px;
+  background: var(--raised);
+}
+
+/* l'image arrive après le texte : un fondu court au lieu d'un saut */
+img.poster {
+  opacity: 0;
+  transition: opacity 200ms var(--ease-out);
+}
+
+img.poster.loaded {
+  opacity: 1;
 }
 
 .poster {
@@ -577,6 +614,22 @@ ul {
 
 .fav[aria-pressed='true'] svg {
   color: var(--accent);
+}
+
+.fav.pop[aria-pressed='true'] svg {
+  animation: heart-pop 200ms var(--ease-out);
+}
+
+@keyframes heart-pop {
+  from {
+    transform: scale(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fav.pop[aria-pressed='true'] svg {
+    animation: none;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
