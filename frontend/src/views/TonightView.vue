@@ -287,6 +287,13 @@ p {
   background: var(--surface);
 }
 
+/* toucher : comme les listes d'iOS, on attend un instant ; un défilement annule l'appui avant que la ligne s'allume */
+@media (hover: none) {
+  .row:has(a:active) {
+    transition: background 0s 80ms;
+  }
+}
+
 .start {
   flex: none;
   width: 72px;

@@ -137,6 +137,7 @@ button {
   a:not(.primary, .secondary, .times a):active,
   button:not(.primary, .secondary):active {
     opacity: 0.7;
+    transition: opacity 0s 80ms; /* un défilement annule l'appui avant ce délai : pas de faux retour */
   }
 }
 

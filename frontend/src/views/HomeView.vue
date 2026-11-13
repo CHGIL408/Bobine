@@ -672,6 +672,13 @@ tbody tr:active {
   background: var(--surface);
 }
 
+/* toucher : comme les listes d'iOS, on attend un instant ; un défilement annule l'appui avant que la ligne s'allume */
+@media (hover: none) {
+  tbody tr:active {
+    transition: background 0s 80ms;
+  }
+}
+
 td {
   padding: 12px 0;
   vertical-align: middle;
