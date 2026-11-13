@@ -245,8 +245,6 @@ Paramètres de `GET /api/showtimes` :
 | `npm test`        | Tests unitaires (Vitest)      |
 | `npm run build`   | Build de production           |
 | `npm run preview` | Prévisualisation du build     |
-| `npm run lint`    | Oxlint et ESLint              |
-| `npm run format`  | Prettier                      |
 
 ## Licence
 
