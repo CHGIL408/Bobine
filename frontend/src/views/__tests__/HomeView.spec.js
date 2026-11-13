@@ -60,6 +60,7 @@ describe('HomeView', () => {
     getCinemas.mockReset().mockResolvedValue(CINEMAS)
     getUpcomingShowtimes.mockReset().mockResolvedValue(SHOWTIMES)
     getComingSoon.mockReset().mockResolvedValue([])
+    push.mockReset()
   })
   afterEach(() => vi.useRealTimers())
 
@@ -76,9 +77,16 @@ describe('HomeView', () => {
 
   it('ouvre le film quand on touche n’importe où sur la ligne', async () => {
     const w = await mountHome()
-    push.mockClear()
     await w.findAll('tbody tr')[1].find('td.score').trigger('click')
     expect(push).toHaveBeenCalledWith('/movies/dune')
+  })
+
+  it('laisse le lien du titre et Ctrl/Cmd-clic au navigateur', async () => {
+    const row = (await mountHome()).findAll('tbody tr')[1]
+    await row.find('.identity a').trigger('click')
+    await row.find('td.score').trigger('click', { metaKey: true })
+    await row.find('td.score').trigger('click', { ctrlKey: true })
+    expect(push).not.toHaveBeenCalled()
   })
 
   it('formate note et durée à la française, avec un tiret si absent', async () => {

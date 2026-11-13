@@ -132,7 +132,7 @@
             <tr
               v-for="movie in listMovies"
               :key="movie._id"
-              @click="$router.push(`/movies/${movie._id}`)"
+              @click="plainRowClick($event) && $router.push(`/movies/${movie._id}`)"
             >
               <td class="thumb">
                 <img
@@ -218,6 +218,12 @@ const movies = ref([])
 const cinemas = ref([])
 const status = ref('loading')
 const query = ref('')
+// le lien gère déjà son clic (et Ctrl/Cmd = nouvel onglet) ; une sélection de texte n'ouvre rien
+const plainRowClick = (e) =>
+  !e.target.closest('a') &&
+  !(e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) &&
+  !window.getSelection()?.toString()
+
 const selectedGenre = ref('Tous')
 const showtimes = ref([])
 const selectedDay = ref('') // '' = toute la semaine, sinon "2026-11-01"
