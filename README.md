@@ -161,7 +161,7 @@ Règles de sécurité des données :
 - Si Google ne renvoie rien pour un cinéma, ses séances restent intactes.
 - Les séances dont le film n'existe plus sont supprimées.
 
-**Planification** : le workflow `.github/workflows/sync-showtimes.yml` s'exécute chaque jour vers 6 h (heure de Québec). Il peut aussi être lancé à la main depuis l'onglet **Actions** (« Run workflow »). Il a besoin des secrets `MONGODB_URI`, `TMDB_API_KEY` et `SERPAPI_API_KEY` dans **Settings › Secrets and variables › Actions**.
+**Planification** : le workflow `.github/workflows/sync-showtimes.yml` est programmé chaque jour à 10 h 17 UTC (5 h 17 l'hiver, 6 h 17 l'été à Québec) ; GitHub le lance souvent avec plusieurs heures de retard. Il peut aussi être lancé à la main depuis l'onglet **Actions** (« Run workflow »). Il a besoin des secrets `MONGODB_URI`, `TMDB_API_KEY` et `SERPAPI_API_KEY` dans **Settings › Secrets and variables › Actions**.
 
 **Quota** : une recherche SerpApi par cinéma et par exécution, soit environ 90 par mois pour 3 cinémas. C'est sous la limite de 250 du plan gratuit. Une recherche identique relancée dans l'heure sort du cache et n'est pas comptée.
 

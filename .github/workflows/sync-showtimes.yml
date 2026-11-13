@@ -2,7 +2,7 @@ name: Synchroniser les séances
 
 on:
   schedule:
-    - cron: '0 10 * * *' # tous les jours vers 6 h à Montréal
+    - cron: '17 10 * * *' # 10 h 17 UTC (5 h 17 l'hiver, 6 h 17 l'été à Québec) ; GitHub retarde souvent de plusieurs heures, l'heure pile est la plus chargée
   workflow_dispatch: # bouton « Run workflow » pour lancer à la main
 
 jobs:
