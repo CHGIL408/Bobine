@@ -166,7 +166,7 @@ Règles de sécurité des données :
 **Quota** : une recherche SerpApi par cinéma et par exécution, soit environ 90 par mois pour 3 cinémas. C'est sous la limite de 250 du plan gratuit. Une recherche identique relancée dans l'heure sort du cache et n'est pas comptée.
 
 **Limites connues** :
-- Chaque titre Google est associé au premier résultat TMDB sorti dans les 18 derniers mois. Une reprise d'un vieux film peut donc être associée à un film récent du même nom.
+- Chaque titre Google est associé au premier résultat TMDB sorti dans les 18 derniers mois, en écartant les films qui sortent dans plus d'un mois (une suite annoncée n'est jamais retenue). Une reprise d'un vieux film peut quand même être associée à un film récent du même nom.
 - Google ne fournit ni les prix, ni les places restantes, ni la langue (VO ou VF). Seul le type de salle est conservé : Standard, IMAX, 3D, UltraAVX, ScreenX ou DBOX.
 
 ## API REST

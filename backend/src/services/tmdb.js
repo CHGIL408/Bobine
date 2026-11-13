@@ -67,6 +67,7 @@ const getMovieById = async (tmdbId) => {
 };
 
 const RECENT_DAYS = 548; // ~18 mois : un film en salle est sorti récemment (ou sort bientôt)
+const PREVIEW_DAYS = 30; // avant-premières : au plus un mois avant la sortie
 
 // Préfère le premier résultat sorti récemment : "Rembrandt" en salle n'est pas le film de 1936.
 // shortcut: une reprise d'un vieux film (ex. ressortie d'Halloween) prendra une version récente du même nom s'il en existe une
@@ -76,8 +77,11 @@ const searchMovieId = async (title, now = new Date()) => {
   });
   const results = response.data.results;
   const cutoff = now.getTime() - RECENT_DAYS * 864e5;
-  const recent = results.find((m) => m.release_date && Date.parse(m.release_date) >= cutoff);
-  return (recent ?? results[0])?.id ?? null;
+  // un film qui a des séances est déjà sorti (ou en avant-première) : une suite annoncée pour plus tard n'est pas le bon
+  const horizon = now.getTime() + PREVIEW_DAYS * 864e5;
+  const notFuture = (m) => !m.release_date || Date.parse(m.release_date) <= horizon;
+  const recent = results.find((m) => m.release_date && Date.parse(m.release_date) >= cutoff && notFuture(m));
+  return (recent ?? results.find(notFuture) ?? results[0])?.id ?? null;
 };
 
 // Date du jour à Québec, "2026-11-04" (même format que release_date)

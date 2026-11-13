@@ -98,6 +98,20 @@ test('searchMovieId préfère un film sorti récemment', async () => {
   assert.strictEqual(await searchMovieId('Rembrandt', now), 1500002);
 });
 
+test("searchMovieId écarte une suite pas encore sortie, même plus récente", async () => {
+  const now = new Date('2026-11-12T12:00:00Z');
+  responses['/search/movie'] = {
+    results: [
+      { id: 1461519, release_date: '2027-07-22' }, // A Minecraft Movie Squared
+      { id: 950387, release_date: '2025-04-04' }, // Minecraft, le film (reprise, > 18 mois)
+    ],
+  };
+  assert.strictEqual(await searchMovieId('A Minecraft Movie', now), 950387);
+  // une avant-première, quelques jours avant la sortie, reste acceptée
+  responses['/search/movie'] = { results: [{ id: 7, release_date: '2026-11-20' }, { id: 8, release_date: '2010-01-01' }] };
+  assert.strictEqual(await searchMovieId('Avant-première', now), 7);
+});
+
 test('searchMovieId garde le premier résultat sans film récent, ou renvoie null', async () => {
   responses['/search/movie'] = { results: [{ id: 1381071 }, { id: 18 }] };
   assert.strictEqual(await searchMovieId('Godzilla Minus Zero'), 1381071);
