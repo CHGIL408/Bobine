@@ -16,6 +16,7 @@
 - [API REST](#api-rest)
 - [Tests et qualité](#tests-et-qualité)
 - [Scripts](#scripts)
+- [Licence](#licence)
 
 ## Fonctionnalités
 
@@ -54,6 +55,10 @@
 - Bouton sur la page d'un film et onglet **Favoris** sur l'accueil.
 - Gardés dans le navigateur (`localStorage`), sans compte.
 
+### Conditions et confidentialité (`/conditions`)
+- Conditions d'utilisation et politique de confidentialité sur une même page, liées depuis le pied de page avec le copyright.
+- La politique décrit ce que le site garde (favoris dans le navigateur, position jamais envoyée) et les services tiers contactés.
+
 ### Administration (`/admin`)
 - Page non liée dans le menu, protégée par la clé `ADMIN_API_KEY`. La clé n'est gardée que dans l'onglet ouvert.
 - Ajout d'un film par son identifiant TMDB : titre, résumé, affiche et note sont récupérés automatiquement.
@@ -68,7 +73,7 @@
 | Données      | [TMDB](https://www.themoviedb.org) pour les fiches, [SerpApi](https://serpapi.com) pour les horaires Google |
 | Tests        | Vitest et Vue Test Utils (frontend), `node:test` (backend)                   |
 | CI/CD        | GitHub Actions : tests à chaque push, synchronisation quotidienne des séances |
-| Hébergement  | API sur Render                                                               |
+| Hébergement  | Frontend sur Vercel, API sur Render                                          |
 
 ## Architecture
 
@@ -81,7 +86,7 @@ backend/
     syncShowtimes.js   Synchronisation quotidienne des séances
 frontend/
   src/
-    views/             Pages (accueil, film, ce soir, cinémas, administration)
+    views/             Pages (accueil, film, ce soir, cinémas, conditions, administration)
     components/        Composants partagés
     stores/            État Pinia (favoris)
     utils/             Dates à l'heure de Québec, agenda .ics, géolocalisation…
@@ -214,14 +219,9 @@ Paramètres de `GET /api/showtimes` :
 
 ## Tests et qualité
 
-```sh
-cd backend && npm test    # node:test : routes, clé API, service TMDB, lecture des horaires
-cd frontend && npm test   # Vitest : pages, favoris, agenda .ics, géolocalisation, recherche
-```
-
+- `npm test` dans `backend/` (node:test : routes, clé API, service TMDB, lecture des horaires) et dans `frontend/` (Vitest : pages, favoris, agenda .ics, géolocalisation, recherche).
 - Les tests n'utilisent ni la base ni le réseau : les modèles Mongoose, axios et l'API du frontend sont simulés.
 - Ils s'exécutent sur GitHub Actions à chaque push et pull request (`.github/workflows/tests.yml`).
-- `npm run lint` (Oxlint et ESLint) et `npm run format` (Prettier) sont disponibles dans `frontend/`.
 
 **Données extrêmes** : en développement, ajoutez `?data=worst`, `empty`, `one` ou `huge` à l'adresse pour tester l'affichage avec des titres très longs, des affiches cassées, une liste vide ou 300 séances. Un sélecteur apparaît alors en bas de l'écran. Ces données (`frontend/src/dev/fixtures.js`) ne sont jamais incluses dans le build de production.
 
@@ -247,3 +247,7 @@ cd frontend && npm test   # Vitest : pages, favoris, agenda .ics, géolocalisati
 | `npm run preview` | Prévisualisation du build     |
 | `npm run lint`    | Oxlint et ESLint              |
 | `npm run format`  | Prettier                      |
+
+## Licence
+
+© 2026 Charles Gilbert. Tous droits réservés. Le code est public pour consultation dans le cadre d'un portfolio ; sa réutilisation demande une autorisation écrite.

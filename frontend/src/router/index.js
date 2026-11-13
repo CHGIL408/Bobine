@@ -4,7 +4,8 @@ import HomeView from '../views/HomeView.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   // retour arrière : on retrouve l'endroit où on était ; nouvelle page : on part du haut
-  scrollBehavior: (to, from, savedPosition) => savedPosition ?? { top: 0 },
+  scrollBehavior: (to, from, savedPosition) =>
+    savedPosition ?? (to.hash ? { el: to.hash } : { top: 0 }),
   routes: [
     {
       path: '/',
@@ -40,7 +41,13 @@ const router = createRouter({
       name: 'admin',
       meta: { title: 'Administration' },
       component: () => import('../views/AdminView.vue'),
-    }
+    },
+    {
+      path: '/conditions',
+      name: 'legal',
+      meta: { title: 'Conditions et confidentialité' },
+      component: () => import('../views/LegalView.vue'),
+    },
   ],
 })
 

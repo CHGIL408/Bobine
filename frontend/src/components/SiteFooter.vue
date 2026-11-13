@@ -14,8 +14,17 @@
       Ce produit utilise l'API TMDB, sans être approuvé ni certifié par TMDB.
       Horaires : Google, via SerpApi.
     </p>
+    <p class="legal">
+      © {{ year }} Bobine ·
+      <RouterLink to="/conditions#conditions">Conditions d'utilisation</RouterLink> ·
+      <RouterLink to="/conditions#confidentialite">Confidentialité</RouterLink>
+    </p>
   </footer>
 </template>
+
+<script setup>
+const year = new Date().getFullYear()
+</script>
 
 <style scoped>
 .footer {
@@ -74,5 +83,9 @@ a:focus-visible {
   max-width: 640px;
   margin: 16px 0 0;
   line-height: 1.5;
+}
+
+.legal {
+  margin: 12px 0 0;
 }
 </style>
