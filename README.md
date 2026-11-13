@@ -21,7 +21,7 @@
 
 ### Accueil
 - Films ayant au moins une séance à venir. Le mieux noté est mis en vedette avec sa prochaine séance, et il figure aussi en tête de la liste.
-- Filtres par jour, par heure (à partir d'une heure précise) et par cinéma. Recherche par titre et filtre par genre.
+- Filtres par jour, par heure (à partir d'une heure précise), par cinéma et par format de salle (Standard, UltraAVX, IMAX, DBOX…). Recherche par titre et filtre par genre.
 - Tri de la liste par note ou de A à Z.
 - Prochaines heures de chaque film avec le format de salle (« STD » quand il n'est pas précisé).
 - **Bientôt à l'affiche** : les 12 prochaines sorties au Canada les plus attendues selon TMDB.

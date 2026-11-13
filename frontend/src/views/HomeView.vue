@@ -27,6 +27,10 @@
         <option value="">Tous les cinémas</option>
         <option v-for="c in cinemas" :key="c._id" :value="c._id">{{ shortName(c.name) }}</option>
       </select>
+      <select v-model="selectedFormat" aria-label="Format">
+        <option value="">Tous les formats</option>
+        <option v-for="f in formats" :key="f" :value="f">{{ f }}</option>
+      </select>
       <button v-if="whenWhereSet" type="button" class="text-action" @click="resetWhenWhere">
         Réinitialiser
       </button>
@@ -230,6 +234,7 @@ const selectedDay = ref('') // '' = toute la semaine, sinon "2026-11-01"
 const after = ref('') // "19:30" depuis le champ heure, '' = toute heure
 const sortBy = ref('rating')
 const selectedCinema = ref('')
+const selectedFormat = ref('')
 
 // Le backend gratuit dort quand personne ne l'utilise : après 3 s, on explique l'attente
 const { slow, start: startSlow, stop: stopSlow } = useSlowLoading()
@@ -272,12 +277,13 @@ const FAVORITES = 'Favoris' // toujours visible, pour qu'on sache que la fonctio
 const genres = computed(() => ['Tous', FAVORITES, ...new Set(movies.value.flatMap((m) => m.genre))])
 
 const whenWhereSet = computed(() =>
-  Boolean(selectedDay.value || afterMinutes.value || selectedCinema.value),
+  Boolean(selectedDay.value || afterMinutes.value || selectedCinema.value || selectedFormat.value),
 )
 const resetWhenWhere = () => {
   selectedDay.value = ''
   after.value = ''
   selectedCinema.value = ''
+  selectedFormat.value = ''
 }
 
 const days = computed(() =>
@@ -285,8 +291,15 @@ const days = computed(() =>
     .sort()
     .map((key) => ({ key, label: dayLabel(key) })),
 )
+// seulement les formats qui ont des séances, Standard en premier
+const formatOf = (s) => s.format ?? 'Standard'
+const formats = computed(() =>
+  [...new Set(showtimes.value.map(formatOf))].sort((a, b) =>
+    a === 'Standard' ? -1 : b === 'Standard' ? 1 : a.localeCompare(b),
+  ),
+)
 
-// Séances à venir qui respectent jour, heure et cinéma, groupées par film (déjà triées par date)
+// Séances à venir qui respectent jour, heure, cinéma et format, groupées par film (déjà triées par date)
 const afterMinutes = computed(() => {
   if (!after.value) return 0
   const [h, m] = after.value.split(':').map(Number)
@@ -300,6 +313,7 @@ const matchingByMovie = computed(() => {
     if (selectedDay.value && dayKey(new Date(s.datetime)) !== selectedDay.value) continue
     if (afterMinutes.value && minutesOfDay(s.datetime) < afterMinutes.value) continue
     if (selectedCinema.value && idOf(s.cinema) !== selectedCinema.value) continue
+    if (selectedFormat.value && formatOf(s) !== selectedFormat.value) continue
     const id = idOf(s.movie)
     if (!byMovie.has(id)) byMovie.set(id, [])
     byMovie.get(id).push(s)

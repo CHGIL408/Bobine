@@ -153,6 +153,17 @@ describe('HomeView', () => {
     expect(w.findAll('tbody td.times').map((td) => td.text())).toEqual(["Aujourd'hui 19 h 30 STD", 'mar. 3 nov. 20 h 00 STD', 'Demain 18 h 00 STD'])
   })
 
+  it('filtre par format, parmi ceux qui ont des séances', async () => {
+    const w = await mountHome()
+    const options = w.find('select[aria-label="Format"]').findAll('option').map((o) => o.text())
+    expect(options).toEqual(['Tous les formats', 'Standard', 'DBOX'])
+    await choose(w, 'Format', 'DBOX')
+    expect(rowTitles(w)).toEqual(['Dune : Deuxième partie'])
+    expect(w.find('tbody td.times').text()).toBe("Aujourd'hui 21 h 35 DBOX")
+    await w.find('.filters button').trigger('click')
+    expect(count(w)).toBe('3 films')
+  })
+
   it('affiche un message sans résultat, puis réinitialise jour, heure et cinéma', async () => {
     const w = await mountHome()
     expect(w.find('.filters button').exists()).toBe(false)
