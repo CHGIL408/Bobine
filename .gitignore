@@ -430,3 +430,4 @@ FodyWeavers.xsd
 
 # graphify knowledge graph output
 graphify-out/
+.scratch/
